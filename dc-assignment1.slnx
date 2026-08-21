@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+  </Folder>
+  <Project Path="ChatServer/ChatServer.csproj" />
+  <Project Path="ChatShared/ChatShared.csproj" />
+  <Project Path="PollingClient/PollingClient.csproj" />
+</Solution>

@@ -1,0 +1,16 @@
+# .gitignore txt file - the following files may exist on each group member's computer, but they are not part of the actual source code
+
+# Visual Studio local workspace files
+.vs/
+
+# Build output folders
+bin/
+obj/
+
+# User-specific Visual Studio files
+*.user
+*.suo
+
+# ReSharper / IDE caches if generated later
+_ReSharper*/
+*.DotSettings.user
