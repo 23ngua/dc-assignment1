@@ -50,6 +50,13 @@ namespace PollingClient
 
                 // Display message returned by server
                 StatusTextBlock.Text = result.Message;
+
+                // Prevent this client from signing in again after success
+                if (result.Success)
+                {
+                    UserIdTextBox.IsEnabled = false;
+                    SignInButton.IsEnabled = false;
+                }
             }
             catch (EndpointNotFoundException)
             {
