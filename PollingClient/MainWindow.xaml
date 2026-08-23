@@ -5,8 +5,67 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PollingClient"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="Chat Server - Sign In" 
+        Height="360" 
+        Width="520"
+        WindowStartupLocation="CenterScreen">
+    
+    <!-- Main layout for sign-in screen -->
+    <Grid Margin="30">
+        
+        <!-- Separate the heading, instructions and sign-in controls -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Application Heading -->
+        <TextBlock Grid.Row="0"
+                   Text="Chat Server"
+                   FontSize="28"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   Margin="0,20,0,5"/>
+        
+        <!-- Instructions for User -->
+        <TextBlock Grid.Row="1"
+                   Text="Enter a user ID to sign in."
+                   FontSize="14"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,20"/>
+        
+        <!-- Sign-in Controls -->
+        <StackPanel Grid.Row="2"
+                    Width="300"
+                    VerticalAlignment="Top">
+            
+            <!-- Label for user ID input -->
+            <TextBlock Text="User ID"
+                       Margin="0,0,0,5"/>
+            
+            <!-- User enters their chosen ID here -->
+            <TextBox x:Name="UserIdTextBox"
+                     Height="34"
+                     FontSize="14"
+                     Padding="6"
+                     Margin="0,0,0,12"/>
+            
+            <!-- Sends the entered user ID to the chat server -->
+            <Button x:Name="SignInButton"
+                    Content="Sign In"
+                    Height="36"
+                    FontSize="14"
+                    Margin="0,0,0,12"
+                    Click="SignInButton_Click"/>
+
+            <!-- **LATER WILL DO** Will display success or rejection messages -->
+            <TextBlock x:Name="StatusTextBlock"
+                       Text=""
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       MinHeight="30"/>
+        </StackPanel>
         
     </Grid>
 </Window>
