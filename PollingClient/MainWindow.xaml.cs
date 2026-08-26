@@ -139,6 +139,24 @@ namespace PollingClient
         {
             // Tell the background polling loop to stop running
             pollingActive = false;
+
+            try
+            {
+                // Only attempt sign-out if this client actually signed in
+                if (serverConnection != null && !string.IsNullOrWhiteSpace(currentUserId))
+                {
+                    // Ask the server to release this user's session and membership
+                    serverConnection.Service.SignOut(currentUserId);
+                }
+            }
+            catch (CommunicationException)
+            {
+                // Ignore shutdown communication errors because the window is already closing
+            }
+            catch (Exception)
+            {
+                // Prevent an unexpected shutdown error from blocking application exit
+            }
         }
 
         // Runs when user clicks Sign In button

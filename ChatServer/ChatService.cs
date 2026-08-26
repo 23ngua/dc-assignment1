@@ -283,5 +283,57 @@ namespace ChatServer
                 Message = "Channel created successfully."
             };
         }
+
+        // Signs out a user and releases their user ID
+        public ChannelActionResult SignOut(string userId)
+        {
+            // Reject an empty or invalid user ID
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return new ChannelActionResult
+                {
+                    Success = false,
+                    Message = "A valid user ID must be provided."
+                };
+            }
+
+            // Remove accidental spaces around the supplied user ID
+            string cleanUserId = userId.Trim();
+
+            // First make sure the user is currently signed in
+            lock (usersLock)
+            {
+                if (!signedInUsers.Contains(cleanUserId))
+                {
+                    return new ChannelActionResult
+                    {
+                        Success = false,
+                        Message = "The user is not currently signed in."
+                    };
+                }
+            }
+
+            // Remove the user from their current channel, if they have one..
+            lock (membershipLock)
+            {
+                if (userChannels.ContainsKey(cleanUserId))
+                {
+                    userChannels.Remove(cleanUserId);
+                }
+            }
+
+            // Finally release the user ID from the signed-in user list
+            lock (usersLock)
+            {
+                signedInUsers.Remove(cleanUserId);
+            }
+
+            // Tell the client that sign-out succeeded
+            return new ChannelActionResult
+            {
+                Success = true,
+                Message = "Signed out successfully."
+            };
+        }
     }
 }

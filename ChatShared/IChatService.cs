@@ -34,5 +34,9 @@ namespace ChatShared
         // Attempts to create a new channel with the supplied name
         [OperationContract]
         ChannelActionResult CreateChannel(string userId, string channelName);
+
+        // Signs out the specified user and releases their user ID
+        [OperationContract]
+        ChannelActionResult SignOut(string userId);
     }
 }
