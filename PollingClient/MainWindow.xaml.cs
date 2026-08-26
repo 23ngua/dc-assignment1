@@ -17,6 +17,7 @@ using ChatShared;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Security.Policy;
+using System.Threading;
 
 namespace PollingClient
 {
@@ -35,9 +36,109 @@ namespace PollingClient
         // This stores the channel the client is currently inside
         private string currentChannelName;
 
+        // Background thread used to repeatedly request updates from the server
+        private Thread pollingThread;
+
+        // Controls whether the background polling loop should continue running
+        private volatile bool pollingActive;
+
+        // Delay between polling requests in milliseconds
+        private const int PollingIntervalMs = 1000;
+
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        // Runs continuously on background polling thread
+        private void PollingLoop()
+        {
+            // Give the polling thread its own WCF connection
+            ChatServerConnection pollingConnection = null;
+
+            // Continue until the client tells the polling thread to stop
+            while (pollingActive)
+            {
+                try
+                {
+                    // Create the polling connection the first time it is needed
+                    if (pollingConnection == null)
+                    {
+                        pollingConnection = new ChatServerConnection();
+                    }
+
+                    // Ask the server for the latest channel list
+                    List<ChannelInfo> channels = pollingConnection.Service.GetChannels();
+
+                    // WPF controls must only be changed on the UI thread
+                    Dispatcher.Invoke(() =>
+                    {
+                        // Only refresh this lsit while the channel-list veiw is visible
+                        if (ChannelListView.Visibility == Visibility.Visible)
+                        {
+                            // Remember the currently selected channel if there is no one
+                            string selectedChannel = ChannelListBox.SelectedItem as string;
+
+                            // Replace the old channel snapshot
+                            ChannelListBox.Items.Clear();
+
+                            // Display every current channel returned by the server
+                            foreach (ChannelInfo channel in channels)
+                            {
+                                ChannelListBox.Items.Add(channel.Name);
+                            }
+
+                            // Restore the previous selection if that channel still exists
+                            if (selectedChannel != null && ChannelListBox.Items.Contains(selectedChannel))
+                            {
+                                ChannelListBox.SelectedItem = selectedChannel;
+                            }
+                        }
+                    });
+                }
+                catch (CommunicationException)
+                {
+                    // Discard a failed WCF connection so the next poll can reconnect
+                    pollingConnection = null;
+                }
+                catch (Exception)
+                {
+                    // Keep the polling thread alive after an unexpected polling error
+                    pollingConnection = null;
+                }
+
+                // Wait before asking the server for another update
+                Thread.Sleep(PollingIntervalMs);
+            }
+        }
+
+        // Starts the background polling thread
+        private void StartPolling()
+        {
+            // Do not start another polling thread if one is already running
+            if (pollingThread != null && pollingThread.IsAlive)
+            {
+                return;
+            }
+
+            // Tell the polling loop that it should continue running
+            pollingActive = true;
+
+            // Create a new thread that will execute PollingLoop()
+            pollingThread = new Thread(PollingLoop);
+
+            // Allow the application to close even if this thread is still running
+            pollingThread.IsBackground = true;
+
+            // Begin executing the polling loop in the background
+            pollingThread.Start();
+        }
+
+        // Runs when the main client window has been closed
+        private void MainWindow_Closed(object sender, EventArgs e)
+        {
+            // Tell the background polling loop to stop running
+            pollingActive = false;
         }
 
         // Runs when user clicks Sign In button
@@ -93,6 +194,9 @@ namespace PollingClient
 
                     // Show the channel-list view
                     ChannelListView.Visibility = Visibility.Visible;
+
+                    // Start background polling now that the client is signed in
+                    StartPolling();
                 }
             }
             catch (EndpointNotFoundException)

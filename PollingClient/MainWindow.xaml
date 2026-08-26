@@ -6,9 +6,10 @@
         xmlns:local="clr-namespace:PollingClient"
         mc:Ignorable="d"
         Title="Chat Server - Sign In" 
-        Height="360" 
-        Width="520"
-        WindowStartupLocation="CenterScreen">
+        Height="460" 
+        Width="620"
+        WindowStartupLocation="CenterScreen"
+        Closed="MainWindow_Closed">
 
     <!-- Main container for the different application views -->
     <Grid Margin="30">
