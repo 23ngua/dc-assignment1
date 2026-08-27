@@ -43,6 +43,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChannelActionResult.cs" />
+    <Compile Include="ChannelInfo.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="IChatService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
