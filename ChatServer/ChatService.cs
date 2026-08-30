@@ -1,9 +1,11 @@
-﻿using System;
+﻿using ChatShared;
+using ChatShared.FileSharing;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
-using ChatShared;
 
 /*
  * ChatService.cs - Implements the WCF operations defined
@@ -29,6 +31,11 @@ namespace ChatServer
         private static readonly object membershipLock = new object(); // Protects user-to-channel membership state
 
         private static readonly object channelsLock = new object(); // Protect the shared channel list when multiple clients access it
+
+        // FILE RELATED VARIABLES
+        private static readonly Dictionary<string, SharedFileInfo> fileMetadata = new Dictionary<string, SharedFileInfo>();
+        private static readonly Dictionary<string, byte[]> fileContents = new Dictionary<string, byte[]>(); // Stores raw bytes of each shared file, key is FileID
+        private static readonly object filesLock = new object(); // lock to protect the shared file dictionaries
 
         public SignInResult SignIn(string userId) // Handles a sign-in request from a client
         {
@@ -335,5 +342,164 @@ namespace ChatServer
                 Message = "Signed out successfully."
             };
         }
+
+        // FILE SHARING METHODS
+        /* UploadFile()
+         * Performs file validity checks and uploads file with a unique id
+         */
+        public FileUploadResult UploadFile(string userID, string channelName, string fileName, byte[] content)
+        {
+            {
+                FileUploadResult upResult = new FileUploadResult();
+
+                // Check missing input
+                if (string.IsNullOrWhiteSpace(userID) || string.IsNullOrWhiteSpace(channelName) || string.IsNullOrWhiteSpace(fileName) || content == null)
+                {
+                    upResult.Success = false;
+                    upResult.Message = "A valid user, channel, file name and file content must be provided.";
+                    return upResult;
+                }
+
+                string cleanUserId = userID.Trim();
+                string cleanChannelName = channelName.Trim();
+                string cleanFileName = fileName.Trim();
+
+                // Check uploader is signed in and a member of the channel
+                lock (membershipLock)
+                {
+                    if (!userChannels.TryGetValue(cleanUserId, out string actualChannel) || actualChannel != cleanChannelName)
+                    {
+                        upResult.Success = false;
+                        upResult.Message = "Must be a valid memeber of channel to upload file.";
+                        return upResult;
+                    }
+                }
+
+                // Check file type 
+                if (!FileSharingRules.IsExtensionAllowed(cleanFileName))
+                {
+                    upResult.Success = false;
+                    upResult.Message = "That file type is not allowed. Allowed types: " + string.Join(", ", FileSharingRules.AllowedExtensions);
+                    return upResult;
+                }
+
+                // Check file size
+                if (content.Length > FileSharingRules.MaxFileSizeBytes)
+                {
+                    upResult.Success = false;
+                    upResult.Message = "File was too large. Max size: 2MB";
+                    return upResult;
+                }
+
+
+                // Finally, Store the file
+                string fileID = Guid.NewGuid().ToString(); // create unique id
+
+                lock (filesLock)
+                {
+                    fileMetadata[fileID] = new SharedFileInfo
+                    {
+                        FileID = fileID,
+                        FileName = cleanFileName,
+                        SharedBy = cleanUserId,
+                        ChannelName = cleanChannelName
+                    };
+
+                    fileContents[fileID] = content;
+                }
+
+                upResult.Success = true;
+                upResult.Message = "File shared successfullly.";
+                upResult.FileID = fileID;
+
+                return upResult;
+            }
+        }
+
+        /* GetChannelFiles()
+         * Returns the metadata (not the bytes) for every file shared into a channel
+         */
+        public List<SharedFileInfo> GetChannelFiles(string channelName)
+        {
+            List<SharedFileInfo> result = new List<SharedFileInfo>();
+
+            if (string.IsNullOrWhiteSpace(channelName))
+            {
+                return result;
+            }
+
+            string cleanChannelName = channelName.Trim();
+
+            lock (filesLock)
+            {
+                foreach (SharedFileInfo file in fileMetadata.Values)
+                {
+                    if (file.ChannelName == cleanChannelName)
+                    {
+                        // returns a copy so callers can't change the server state
+                        result.Add(new SharedFileInfo
+                        {
+                            FileID = file.FileID,
+                            FileName = file.FileName,
+                            SharedBy = file.SharedBy,
+                            ChannelName = file.ChannelName
+                        });
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /* DownloadFile()
+         * Get bytes of a shared file, if the user is allowed to
+         */
+        public FileDownloadResult DownloadFile(string userID, string fileID)
+        {
+            FileDownloadResult downResult = new FileDownloadResult();
+
+            // Check for valid inputs
+            if (string.IsNullOrWhiteSpace(userID) || string.IsNullOrWhiteSpace(fileID))
+            {
+                downResult.Success = false;
+                downResult.Message = "A valid user and file id must be provided.";
+
+                return downResult;
+            }
+
+            string cleanUserId = userID.Trim();
+            SharedFileInfo metadata;
+            byte[] content;
+
+            //Check if file exists
+            lock (filesLock)
+            {
+                if (!fileMetadata.TryGetValue(fileID, out metadata) || !fileContents.TryGetValue(fileID, out content))
+                {
+                    downResult.Success = false;
+                    downResult.Message = "File no longer exists on the server.";
+                    return downResult;
+                }
+            }
+
+            // Check if requester is a member of channel
+            lock (membershipLock)
+            {
+                if (!userChannels.TryGetValue(cleanUserId, out string actualChannel) || actualChannel != metadata.ChannelName)
+                {
+                    downResult.Success = false;
+                    downResult.Message = "You must be a member of the channel this file was shared to.";
+                    return downResult;
+                }
+            }
+
+            // Finally, Return file
+            downResult.Success = true;
+            downResult.Message = "File retrieved successfully.";
+            downResult.FileName = metadata.FileName;
+            downResult.Content = content;
+            return downResult;
+        }
     }
 }
+
