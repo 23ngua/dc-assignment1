@@ -1,7 +1,15 @@
-﻿using System;
+﻿using ChatShared;
+using ChatShared.FileSharing;
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Policy;
+using System.ServiceModel;
+using System.ServiceModel.Channels;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,11 +21,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using ChatShared;
-using System.ServiceModel;
-using System.ServiceModel.Channels;
-using System.Security.Policy;
-using System.Threading;
 
 namespace PollingClient
 {
@@ -28,7 +31,6 @@ namespace PollingClient
     {
         // This stores the WCF connection used to communicate with chat server
         private ChatServerConnection serverConnection;
-
 
         // This stores the user ID accepted by server
         private string currentUserId;
@@ -385,6 +387,58 @@ namespace PollingClient
             {
                 // Handle any unexpected problem cleanly
                 ChannelListStatusTextBlock.Text = "An unexpected error occurred while creating the channel.";
+            }
+        }
+
+        // FILE SHARING METHODS
+        // Runs when the user clicks the Share File button
+        private void ShareFileButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Let the user pick a file, restricted to the allowed types up front
+            OpenFileDialog dialog = new OpenFileDialog
+            {
+                Filter = "Allowed files (*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.txt)|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.txt"
+            };
+
+            // Do nothing further if the user cancelled the dialog
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            try
+            {
+                // Read the chosen file's bytes from disk
+                byte[] content = File.ReadAllBytes(dialog.FileName);
+                string fileName = System.IO.Path.GetFileName(dialog.FileName);
+
+                // Check the size on the client first
+                if (content.Length > FileSharingRules.MaxFileSizeBytes)
+                {
+                    FileStatusTextBlock.Text = "That file is too large. The maximum size is 2 MB.";
+                    return;
+                }
+
+                // Send the file to the server to be shared into the current channel
+                FileUploadResult result = serverConnection.Service.UploadFile(
+                    currentUserId, currentChannelName, fileName, content);
+
+                // Show the server's response either way
+                FileStatusTextBlock.Text = result.Message;
+
+                // Refresh the list immediately so the sender sees their own file appear right away
+                if (result.Success)
+                {
+                    RefreshSharedFiles(serverConnection);
+                }
+            }
+            catch (CommunicationException)
+            {
+                FileStatusTextBlock.Text = "Communication with the chat server failed.";
+            }
+            catch (Exception)
+            {
+                FileStatusTextBlock.Text = "An unexpected error occurred while sharing the file.";
             }
         }
     }

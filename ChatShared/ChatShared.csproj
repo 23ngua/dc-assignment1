@@ -46,8 +46,13 @@
     <Compile Include="ChannelActionResult.cs" />
     <Compile Include="ChannelInfo.cs" />
     <Compile Include="Class1.cs" />
+    <Compile Include="FileSharing\FileDownloadResult.cs" />
+    <Compile Include="FileSharing\FileSharingRules.cs" />
+    <Compile Include="FileSharing\FileUploadResult.cs" />
+    <Compile Include="FileSharing\SharedFileInfo.cs" />
     <Compile Include="IChatService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="FileSharing\SharedFile.cs" />
     <Compile Include="SignInResult.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
