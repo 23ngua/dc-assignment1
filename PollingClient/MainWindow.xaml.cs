@@ -387,5 +387,31 @@ namespace PollingClient
                 ChannelListStatusTextBlock.Text = "An unexpected error occurred while creating the channel.";
             }
         }
+
+        private void SendMessage_Click(object sender, RoutedEventArgs e)
+        {
+            string newMessage = MessageTextBox.Text;
+
+            if (string.IsNullOrWhiteSpace(newMessage))
+            {
+                // Can have feedback if nothing added, or just dont do anything
+                return;
+            }
+            // Send message to server
+            try
+            {
+
+            }
+            catch (CommunicationException)
+            {
+                // Handle a WCF communication failure without crashing
+                ChannelListStatusTextBlock.Text = "Message wasnt sent";
+            }
+            catch (Exception)
+            {
+                // Handle any unexpected problem cleanly
+                ChannelListStatusTextBlock.Text = "An unexpected error occurred while creating the channel.";
+            }
+        }
     }
 }

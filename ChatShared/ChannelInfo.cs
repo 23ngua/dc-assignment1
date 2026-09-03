@@ -17,8 +17,16 @@ namespace ChatShared
     [DataContract]
     public class ChannelInfo
     {
-        // Stores the unique name of channel
+        // Stores the name of channel
         [DataMember]
         public string Name { get; set; }
+
+        // Stores all messages for channel
+        [DataMember]
+        public List<string> Messages { get; set; }
+
+        // Stores all connected users for private channels
+        [DataMember]
+        public List<uint> ConnectedUserIDs { get; set; }
     }
 }

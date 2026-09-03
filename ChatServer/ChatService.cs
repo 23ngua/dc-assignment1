@@ -1,9 +1,10 @@
-﻿using System;
+﻿using ChatShared;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
-using ChatShared;
 
 /*
  * ChatService.cs - Implements the WCF operations defined
@@ -128,7 +129,7 @@ namespace ChatServer
 
                 foreach (ChannelInfo channel in channels)
                 {
-                    if (channel.Name == cleanChannelName)
+                    if (channel.Name.get() == cleanChannelName)
                     {
                         channelExists = true;
                         break;
@@ -334,6 +335,82 @@ namespace ChatServer
                 Success = true,
                 Message = "Signed out successfully."
             };
+        }
+
+        public ChannelActionResult sendMessage(string userId, string message, string channelName)
+        {
+            // Reject empty or invalid inputs
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(channelName) || string.IsNullOrWhiteSpace(message))
+            {
+                return new ChannelActionResult
+                {
+                    Success = false,
+                    Message = "A valid Message must be sent from valid user and channel."
+                };
+            }
+
+            string cleanUserId = userId.Trim();
+            string cleanChannelName = channelName.Trim();
+
+            // Check user signed in
+            lock (usersLock)
+            {
+                if (!signedInUsers.Contains(cleanUserId) || )
+                {
+                    return new ChannelActionResult
+                    {
+                        Success = false,
+                        Message = "The user is not currently signed in."
+                    };
+                }
+            }
+
+            //Check if user appart of channel
+            if (!userChannels.ContainsKey(cleanUserId))
+            {
+                return new ChannelActionResult
+                {
+                    Success = false,
+                    Message = "You are not currently in a channel."
+                };
+            }
+
+            lock (channelsLock)
+            {
+                ChannelInfo currentChannel = FindChannel(cleanChannelName);
+                // If channel wasnt found
+                if (currentChannel == null)
+                {
+                    return new ChannelActionResult
+                    {
+                        Success = false,
+                        Message = "Channel name dosnt exist"
+                    };
+                }
+                addMessage(currentChannel, message);
+            }
+            return new ChannelActionResult
+            {
+                Success = true,
+                Message = "Message Sent Successfully"
+            };
+        }
+
+        private ChannelInfo FindChannel(string name)
+        {
+            foreach (ChannelInfo channel in channels)
+            {
+                if (string.Equals(channel.Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return channel;
+                }
+            }
+            return null;
+        }
+
+        private void addMessage(ChannelInfo channel, string message)
+        {
+            channel.Messages.Add(message);
         }
     }
 }

@@ -38,5 +38,8 @@ namespace ChatShared
         // Signs out the specified user and releases their user ID
         [OperationContract]
         ChannelActionResult SignOut(string userId);
+
+        [OperationContract]
+        ChannelActionResult sendMessage(string userId, string message, string channelName);
     }
 }

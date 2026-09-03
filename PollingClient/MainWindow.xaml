@@ -15,8 +15,9 @@
     <Grid Margin="30">
 
         <!-- ***SIGN-IN VIEW*** -->
-        <Grid x:Name="SignInView">
-            
+        <Grid x:Name="SignInView"
+            Visibility="Collapsed">
+
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -75,7 +76,8 @@
         <!-- ***CHANNEL LIST VIEW*** -->
         <!-- This is hidden until user successfully signed in -->
         <Grid x:Name="ChannelListView"
-              Visibility="Collapsed">
+            Visibility="Collapsed">
+
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -164,8 +166,7 @@
         
         <!-- ***CHANNEL CONVERSATION VIEW*** -->
         <!-- This is hidden until the user successfully joins a channel-->
-        <Grid x:Name="ChannelConversationView"
-              Visibility="Collapsed">
+        <Grid x:Name="ChannelConversationView">
             
             <!-- Split the conversation screen into main areas -->
             <Grid.RowDefinitions>
@@ -254,8 +255,9 @@
                         Grid.Column="1"
                         Content="Send"
                         Width="100"
-                        Height="36"/>
-                
+                        Height="36"
+                        Click="SendMessage_Click"/>
+
             </Grid>
             
             <!-- Bottom channel controls -->
