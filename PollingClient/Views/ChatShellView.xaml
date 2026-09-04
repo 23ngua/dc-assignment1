@@ -1,0 +1,51 @@
+<UserControl x:Class="PollingClient.Views.ChatShellView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Height="460" Width="620">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left: channel sidebar -->
+        <Border Grid.Column="0" Opacity="0.99">
+            <DockPanel Margin="10">
+                <TextBlock DockPanel.Dock="Top" Text="Channels" FontWeight="Bold" Margin="0,0,0,10"/>
+                <Button x:Name="CreateChannelButton" DockPanel.Dock="Bottom" Content="Create Channel" Height="28" Margin="0,10,0,0" Click="CreateChannelButton_Click"/>
+                <ListBox x:Name="ChannelListBox" SelectionChanged="ChannelListBox_SelectionChanged"/>
+            </DockPanel>
+        </Border>
+
+        <!-- Right: placeholder until a channel is selected -->
+        <Grid Grid.Column="1">
+            <TextBlock x:Name="PlaceholderText"
+                       Text="Select a channel to get started"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="16"/>
+
+            <DockPanel x:Name="ChannelContentPanel" Margin="20" Visibility="Collapsed">
+                <TextBlock x:Name="CurrentChannelTextBlock" DockPanel.Dock="Top" Text="Channel" FontSize="22" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                    <Button x:Name="LeaveChannelButton" Content="Leave Channel" Height="32" Width="120" Margin="0,0,10,0" Click="LeaveChannelButton_Click"/>
+                    <Button x:Name="ShareFileButton" Content="Share File" Height="32" Width="100" Margin="0,0,10,0" Click="ShareFileButton_Click"/>
+                </StackPanel>
+
+                <Grid DockPanel.Dock="Bottom" Margin="0,10,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="MessageTextBox" Grid.Column="0" Height="30" Margin="0,0,10,0"/>
+                    <Button x:Name="SendMessageButton" Grid.Column="1" Content="Send" Width="80" Height="30" Click="SendMessageButton_Click"/>
+                </Grid>
+
+                <ListBox x:Name="MessagesListBox"/>
+            </DockPanel>
+        </Grid>
+
+    </Grid>
+</UserControl>
