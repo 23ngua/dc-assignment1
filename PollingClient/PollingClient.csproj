@@ -97,13 +97,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ChatResult\ChatResult.csproj">
+      <Project>{a8adf0e9-5fa5-4fb4-8589-a75edc57dda6}</Project>
+      <Name>ChatResult</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ChatServerTier\ChatServerTier.csproj">
       <Project>{c51a75b9-2d56-4ca1-baf1-3284af5a0a9d}</Project>
       <Name>ChatServerTier</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ChatShared\ChatResults.csproj">
-      <Project>{c8a6b655-93bd-41f4-a2c3-8044026133c1}</Project>
-      <Name>ChatResults</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
