@@ -17,7 +17,7 @@ namespace PollingClient
     public class ChatServerConnection
     {
         // Fix WCF address exposed by ChatServer project
-        private const string ServerAddress = "net.tcp://localhost:9000/ChatServerImplimentation";
+        private const string ServerAddress = "net.tcp://localhost:9000/ChatServiceImplementation";
 
         // Create and manage WCF client channels
         private readonly ChannelFactory<ChatServerInterface> channelFactory;
@@ -29,7 +29,7 @@ namespace PollingClient
         public ChatServerConnection()
         {
             // Use same TCP binding and security mode as the server
-            NetTcpBinding binding = new NetTcpBinding(SecurityMode.None);
+            var binding = new NetTcpBinding();
 
             // Identify server endpoint that the client will contact
             EndpointAddress endpoint = new EndpointAddress(ServerAddress);
