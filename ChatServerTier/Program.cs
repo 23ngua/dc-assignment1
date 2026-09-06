@@ -16,32 +16,20 @@ namespace ChatServerTier
     {
         static void Main(string[] args)
         {
-            // Fixed address used by clients to connect to the chat server
-            Uri baseAddress = new Uri("net.tcp://localhost:9000/ChatServiceImplementation");
+            //Start the server
+            Console.WriteLine("Welcome to the Chat Server");
+            var tcp = new NetTcpBinding();
 
-            // Create a WCF host for ChatService implementation
-            using (ServiceHost host = new ServiceHost(typeof(ChatServerImplementation), baseAddress))
-            {
-                // Use TCP communication between server and clients
-                NetTcpBinding binding = new NetTcpBinding(SecurityMode.None);
-
-                // Expose shared IChatService contract using this binding
-                host.AddServiceEndpoint(
-                    typeof(ChatServerImplementation),
-                    binding,
-                    "");
-
-                // Start listening for incoming client requests
-                host.Open();
-
-                Console.WriteLine("Chat Server is running.");
-                Console.WriteLine("Address: " + baseAddress);
-                Console.WriteLine();
-                Console.WriteLine("Press ENTER to stop the server.");
-
-                // Keep server running until ENTER is pressed
-                Console.ReadLine();
-            }
+            //Bind the interface
+            //Create the host
+            var host = new ServiceHost(typeof(ChatServerImplementation));
+            host.AddServiceEndpoint(typeof(ChatServerInterface), tcp, "net.tcp://localhost:9000/ChatServiceImplementation");
+            host.Open();
+            //Hold the server open until someone does something
+            Console.WriteLine("System Online");
+            Console.ReadLine();
+            //Close the host
+            host.Close();
         }
     }
 }
