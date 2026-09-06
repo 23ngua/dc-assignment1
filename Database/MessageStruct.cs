@@ -8,14 +8,14 @@ namespace Database
 {
     internal class MessageStruct
     {
-        private uint SenderID;
+        private Guid SenderID;
         private string Message;
-        public MessageStruct(uint id, string msg)
+        public MessageStruct(Guid id, string msg)
         {
             SenderID = id;
             Message = msg;
         }
-        public uint GetSenderID() { return SenderID; }
+        public Guid GetSenderID() { return SenderID; }
         public string GetMessage() { return Message; }
     }
 }

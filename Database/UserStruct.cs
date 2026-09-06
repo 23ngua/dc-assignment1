@@ -8,16 +8,18 @@ namespace Database
 {
     internal class UserStruct
     {
-        private Guid UserID;
-        private string Name;
+
+        private string UserID;
+        private bool SignedIn;
         // private bool SignedInStatus; (ADD IF NEED)
         
-        public UserStruct(string name)
+        public UserStruct(string userID)
         {
-            UserID = Guid.NewGuid();
-            Name = name;
+            UserID = userID;
+            SignedIn = false;
         }
-        public Guid GetUserID() { return UserID; }
-        public string GetName() { return Name; }
+        public string GetName() { return UserID; }
+        public void SignIn() { SignedIn = true; }
+        public void SignOut() { SignedIn = false; }
     }
 }

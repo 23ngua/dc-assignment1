@@ -6,20 +6,21 @@ using System.Threading.Tasks;
 
 namespace Database
 {
-    internal class FileStruct
+    public class FileStruct
     {
-        private uint FileID;
+        private Guid FileID;
         private string FileName;
-        private uint SharedBy; 
-        public FileStruct(uint id, string name, uint sharedby)
+        private Guid SharedBy; 
+        // NEED TO ADD FILE BYTE STREAM OR SOMETHING IDK, ASK JON
+        public FileStruct(string name, Guid sharedby)
         {
-            FileID = id;
+            FileID = Guid.NewGuid();
             FileName = name;
             SharedBy = sharedby;
         }
-        public uint GetFileID() { return FileID; }
+        public Guid GetFileID() { return FileID; }
         public string GetFileName() { return FileName; }
-        public uint GetSharedBy() { return SharedBy; }
+        public Guid GetSharedBy() { return SharedBy; }
 
     }
 }

@@ -13,7 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using ChatShared;
+using ChatServerTier;
+using ChatResults;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Security.Policy;
@@ -68,7 +69,7 @@ namespace PollingClient
                     }
 
                     // Ask the server for the latest channel list
-                    List<ChannelInfo> channels = pollingConnection.Service.GetChannels();
+                    List<string> channels = pollingConnection.Service.GetChannelList();
 
                     // WPF controls must only be changed on the UI thread
                     Dispatcher.Invoke(() =>
@@ -83,9 +84,9 @@ namespace PollingClient
                             ChannelListBox.Items.Clear();
 
                             // Display every current channel returned by the server
-                            foreach (ChannelInfo channel in channels)
+                            foreach (string channel in channels)
                             {
-                                ChannelListBox.Items.Add(channel.Name);
+                                ChannelListBox.Items.Add(channel);
                             }
 
                             // Restore the previous selection if that channel still exists
@@ -186,15 +187,15 @@ namespace PollingClient
                     currentUserId = userId.Trim();
 
                     // Ask server for all currently available channels
-                    List<ChannelInfo> channels = serverConnection.Service.GetChannels();
+                    List<string> channels = serverConnection.Service.GetChannelList();
 
                     // Remove any old entries before displaying latest list
                     ChannelListBox.Items.Clear();
 
                     // Add each server channel to channel list
-                    foreach (ChannelInfo channel in channels)
+                    foreach (string channel in channels)
                     {
-                        ChannelListBox.Items.Add(channel.Name);
+                        ChannelListBox.Items.Add(channel);
                     }
 
                     // Give feedback if server currently has no channels
@@ -303,14 +304,14 @@ namespace PollingClient
                     MessageTextBox.Clear();
 
                     // Get a fresh channel list from server
-                    List<ChannelInfo> channels = serverConnection.Service.GetChannels();
+                    List<string> channels = serverConnection.Service.GetChannelList();
 
                     // Replace old channel-list contents
                     ChannelListBox.Items.Clear();
 
-                    foreach (ChannelInfo channel in channels)
+                    foreach (string channel in channels)
                     {
-                        ChannelListBox.Items.Add(channel.Name);
+                        ChannelListBox.Items.Add(channel);
                     }
 
                     // Display successful leave message
@@ -364,15 +365,15 @@ namespace PollingClient
                     NewChannelNameTextBox.Clear();
 
                     // Ask server for latest authoritative channel lsit
-                    List<ChannelInfo> channels = serverConnection.Service.GetChannels();
+                    List<string> channels = serverConnection.Service.GetChannelList();
 
                     // Remove old list before rebuilding it
                     ChannelListBox.Items.Clear();
 
                     // Display every current server channel
-                    foreach (ChannelInfo channel in channels)
+                    foreach (string channel in channels)
                     {
-                        ChannelListBox.Items.Add(channel.Name);
+                        ChannelListBox.Items.Add(channel);
                     }
                 }
             }

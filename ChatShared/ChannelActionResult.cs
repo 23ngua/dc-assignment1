@@ -10,7 +10,7 @@ using System.Runtime.Serialization;
  * ChannelActionResult.cs - Shared WCF result returned after a channel-related operation.
  */
 
-namespace ChatShared
+namespace ChatResults
 {
     // Represents whether a channel operation succeeded
     [DataContract]
