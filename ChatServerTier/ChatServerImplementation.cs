@@ -1,12 +1,12 @@
-﻿using System;
+﻿using ChatResult;
+using Database;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
-using System.ServiceModel;
-using ChatResults;
-using Database;
-using System.Configuration;
 using System.Xml.Schema;
 
 namespace ChatServerTier
@@ -18,6 +18,7 @@ namespace ChatServerTier
         private static Channels channels = Channels.Instance;
         private static HashSet<string> signedInUsers = new HashSet<string>();
         private static Dictionary<string, string> userChannels = new Dictionary<string, string>();
+        private static SharedFiles sharedFiles = SharedFiles.Instance;
 
 
         private static readonly object usersLock = new object();    // Protects signedInUsers
@@ -208,14 +209,68 @@ namespace ChatServerTier
         {
 
         }
-
-        public ChannelActionResult SendFile()
-        {
-
-        }
         */
 
+        public ChannelActionResult ShareFile(string userId, string channelName, string fileName, byte[] fileBytes)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(channelName) || fileBytes == null)
+            {
+                return new ChannelActionResult { Success = false, Message = "Invalid file share request." };
+            }
 
+            string cleanUserId = userId.Trim();
+
+            lock (membershipLock)
+            {
+                if (!userChannels.TryGetValue(cleanUserId, out string actualChannel) || actualChannel != channelName)
+                {
+                    return new ChannelActionResult { Success = false, Message = "You are not a member of that channel." };
+                }
+            }
+
+            string ext = System.IO.Path.GetExtension(fileName);
+            var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".txt" };
+            if (!allowed.Contains(ext))
+            {
+                return new ChannelActionResult { Success = false, Message = "That file type is not allowed." };
+            }
+
+            if (fileBytes.Length > 2 * 1024 * 1024)
+            {
+                return new ChannelActionResult { Success = false, Message = "File exceeds the 2 MB limit." };
+            }
+
+            sharedFiles.AddFile(new FileStruct(fileName, cleanUserId, channelName, fileBytes));
+
+            return new ChannelActionResult { Success = true, Message = "File shared successfully." };
+        }
+
+        public List<SharedFileInformation> GetSharedFiles(string channelName)
+        {
+            return sharedFiles.GetFilesForChannel(channelName)
+                .Select(f => new SharedFileInformation { FileId = f.GetFileID(), FileName = f.GetFileName(), SharedBy = f.GetSharedBy() }).ToList();
+        }
+
+        public FileDownloadResult DownloadFile(string userId, Guid fileId)
+        {
+            string cleanUserId = (userId ?? "").Trim();
+            FileStruct file = sharedFiles.GetFile(fileId);
+
+            if (file == null)
+            {
+                return new FileDownloadResult { Success = false, Message = "That file no longer exists." };
+            }
+                
+            lock (membershipLock)
+            {
+                if (!userChannels.TryGetValue(cleanUserId, out string actualChannel) || actualChannel != file.GetChannelName())
+                {
+                    return new FileDownloadResult { Success = false, Message = "You are not a member of that channel." };
+                }
+            }
+
+            return new FileDownloadResult { Success = true, FileName = file.GetFileName(), FileBytes = file.GetFileBytes() };
+        }
 
 
     }

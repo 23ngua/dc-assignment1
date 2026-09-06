@@ -16,7 +16,7 @@
 
         <!-- ***SIGN-IN VIEW*** -->
         <Grid x:Name="SignInView"
-              Visibility="Hidden">
+              Visibility="Visible">
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -166,7 +166,7 @@
         <!-- ***CHANNEL CONVERSATION VIEW*** -->
         <!-- This is hidden until the user successfully joins a channel-->
         <Grid x:Name="ChannelConversationView"
-              Visibility="Visible">
+              Visibility="Hidden">
 
             <!-- Split the conversation screen into main areas -->
             <Grid.RowDefinitions>
@@ -223,14 +223,15 @@
 
                 <!-- Files shared into the channel -->
                 <GroupBox Grid.Row="1"
-                          Header="Shared Files"
-                          Margin="0,5,0,10">
-
-                    <ListBox x:Name="SharedFilesListBox"/>
+          Header="Shared Files"
+          Margin="0,5,0,10">
+                    <DockPanel LastChildFill="True">
+                        <Button x:Name="ShareFileButton" Content="Share File" DockPanel.Dock="Bottom" Margin="0,0,0,5" Click="ShareFileButton_Click" Width="70"/>
+                        <TextBlock x:Name="SharedFilesStatusTextBlock" DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                        <ListBox x:Name="SharedFilesListBox" DisplayMemberPath="." MouseDoubleClick="SharedFilesListBox_MouseDoubleClick"/>
+                    </DockPanel>
                 </GroupBox>
-
             </Grid>
-
             <!-- Message input area -->
             <Grid Grid.Row="2"
                   Grid.Column="0"
@@ -265,14 +266,6 @@
                         Grid.ColumnSpan="2"
                         Orientation="Horizontal"
                         HorizontalAlignment="Center">
-
-                <!-- ***Will later allow a file to be shared -->
-                <Button x:Name="ShareFileButton"
-                        Content="Share File"
-                        Width="120"
-                        Height="36"
-                        Margin="5"
-                        Click=""/>
 
                 <!-- Leaves current channel and returns to channel list -->
                 <Button x:Name="LeaveChannelButton"

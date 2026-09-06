@@ -10,17 +10,22 @@ namespace Database
     {
         private Guid FileID;
         private string FileName;
-        private Guid SharedBy; 
-        // NEED TO ADD FILE BYTE STREAM OR SOMETHING IDK, ASK JON
-        public FileStruct(string name, Guid sharedby)
+        private string SharedBy;
+        private string ChannelName;
+        private byte[] FileBytes;
+        public FileStruct(string name, string sharedBy, string channelName, byte[] fileBytes)
         {
             FileID = Guid.NewGuid();
             FileName = name;
-            SharedBy = sharedby;
+            SharedBy = sharedBy;
+            ChannelName = channelName;
+            FileBytes = fileBytes;
         }
         public Guid GetFileID() { return FileID; }
         public string GetFileName() { return FileName; }
-        public Guid GetSharedBy() { return SharedBy; }
+        public string GetSharedBy() { return SharedBy; }
+        public string GetChannelName() { return ChannelName; }
+        public byte[] GetFileBytes() { return FileBytes; }
 
     }
 }

@@ -19,6 +19,9 @@ namespace ChatServerTier
             //Start the server
             Console.WriteLine("Welcome to the Chat Server");
             var tcp = new NetTcpBinding();
+            tcp.MaxReceivedMessageSize = 4 * 1024 * 1024; // 4MB
+            tcp.MaxBufferSize = 4 * 1024 * 1024;
+            tcp.ReaderQuotas.MaxArrayLength = 4 * 1024 * 1024; 
 
             //Bind the interface
             //Create the host

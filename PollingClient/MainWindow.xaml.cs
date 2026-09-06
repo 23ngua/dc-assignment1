@@ -14,11 +14,11 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 using ChatServerTier;
-using ChatResults;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Security.Policy;
 using System.Threading;
+using ChatResult;
 
 namespace PollingClient
 {
@@ -96,6 +96,42 @@ namespace PollingClient
                             }
                         }
                     });
+
+                    // Poll for file changes
+                    string channelToPoll = currentChannelName;
+
+                    if (channelToPoll != null)
+                    {
+                        List<SharedFileInformation> files = pollingConnection.Service.GetSharedFiles(channelToPoll);
+
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (ChannelConversationView.Visibility == Visibility.Visible && currentChannelName == channelToPoll)
+                            {
+                                object selectedFile = SharedFilesListBox.SelectedItem;
+
+                                SharedFilesListBox.Items.Clear();
+
+                                foreach (SharedFileInformation file in files)
+                                {
+                                    SharedFilesListBox.Items.Add(file);
+                                }
+
+                                // Restore selection by matching FileId, since these are new object instances each poll
+                                if (selectedFile is SharedFileInformation previouslySelected)
+                                {
+                                    foreach (SharedFileInformation file in SharedFilesListBox.Items)
+                                    {
+                                        if (file.FileId == previouslySelected.FileId)
+                                        {
+                                            SharedFilesListBox.SelectedItem = file;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
                 }
                 catch (CommunicationException)
                 {
@@ -302,6 +338,7 @@ namespace PollingClient
                     MembersListBox.Items.Clear();
                     SharedFilesListBox.Items.Clear();
                     MessageTextBox.Clear();
+                    SharedFilesStatusTextBlock.Text = "";
 
                     // Get a fresh channel list from server
                     List<string> channels = serverConnection.Service.GetChannelList();
@@ -386,6 +423,77 @@ namespace PollingClient
             {
                 // Handle any unexpected problem cleanly
                 ChannelListStatusTextBlock.Text = "An unexpected error occurred while creating the channel.";
+            }
+        }
+
+        private void ShareFileButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Supported files (*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.txt)|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.txt"
+            };
+
+            // Do nothing if the user cancels dialogue
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            try
+            {
+                byte[] fileBytes = System.IO.File.ReadAllBytes(dialog.FileName); // Read the chosen file into memory
+
+                // Check size client side first for fast feedbacker, server also enforces
+                if (fileBytes.Length > 2 * 1024 * 1024)
+                {
+                    SharedFilesStatusTextBlock.Text = "File exceeds the 2 MB limit.";
+                    return;
+                }
+
+                string fileName = System.IO.Path.GetFileName(dialog.FileName);
+                ChannelActionResult result = serverConnection.Service.ShareFile(currentUserId, currentChannelName, fileName, fileBytes);
+                SharedFilesStatusTextBlock.Text = result.Message; // Display the servers response
+            }
+            catch (CommunicationException)
+            {
+                SharedFilesStatusTextBlock.Text = "Communication with the chat server failed.";
+            }
+            catch (Exception)
+            {
+                SharedFilesStatusTextBlock.Text = "An unexpected error occurred while sharing the file.";
+            }
+        }
+
+        private void SharedFilesListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (!(SharedFilesListBox.SelectedItem is SharedFileInformation selectedFile))
+            {
+                return;
+            }
+
+            try
+            {
+                FileDownloadResult result = serverConnection.Service.DownloadFile(currentUserId, selectedFile.FileId); //Retrieve Files bytes
+
+                if (!result.Success)
+                {
+                    SharedFilesStatusTextBlock.Text = result.Message;
+                    return;
+                }
+
+                // Write the file to a temp location so the OS can open it with its default app
+                string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), result.FileName);
+                System.IO.File.WriteAllBytes(tempPath, result.FileBytes);
+
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(tempPath) { UseShellExecute = true });
+            }
+            catch (CommunicationException)
+            {
+                SharedFilesStatusTextBlock.Text = "Communication with the chat server failed.";
+            }
+            catch (Exception)
+            {
+                SharedFilesStatusTextBlock.Text = "An unexpected error occurred while opening the file.";
             }
         }
     }

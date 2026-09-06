@@ -1,10 +1,10 @@
-﻿using System;
+﻿using ChatResult;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
-using ChatResults;
 
 namespace ChatServerTier
 {
@@ -35,13 +35,16 @@ namespace ChatServerTier
         [OperationContract]
         List<string> GetChannelList();
 
-        /*
-        [OperationContract]
-        ChannelActionResult SendMessage();
+        /* --- FILE SHARING --- */
 
         [OperationContract]
-        ChannelActionResult SendFile();
-        */
+        ChannelActionResult ShareFile(string userId, string channelName, string fileName, byte[] fileBytes);
+
+        [OperationContract]
+        List<SharedFileInformation> GetSharedFiles(string channelName);
+
+        [OperationContract]
+        FileDownloadResult DownloadFile(string userId, Guid fileId);
 
         // Start Private Message
     }

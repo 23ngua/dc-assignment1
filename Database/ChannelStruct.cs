@@ -9,14 +9,14 @@ namespace Database
 {
     internal class ChannelStruct
     {
-        private List<FileStruct> FileList;
+        //private List<FileStruct> FileList;
         public ChannelStruct()
         {
-            FileList = new List<FileStruct>();
+            //FileList = new List<FileStruct>();
             //Members = new List<string>();
         }
 
-        public List<FileStruct> GetFile() { return FileList; }
+        //public List<FileStruct> GetFile() { return FileList; }
         //public List<string> GetMembers() { return Members; }
 
         /*public void AddMember(string Name)
@@ -29,10 +29,10 @@ namespace Database
             Members.Remove(Name);
         }*/
 
-        public void AddFile(string name, Guid sharedby)
-        {
-            FileStruct file = new FileStruct(name, sharedby);
-            FileList.Add(file);
-        }
+        //public void AddFile(string name, Guid sharedby)
+        //{
+        //    FileStruct file = new FileStruct(name, sharedby);
+        //    FileList.Add(file);
+        //}
     }
 }
