@@ -1,27 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
-using System.ServiceModel;
+using ChatResults;
 
-/** IChatService.cs - An interface that defines the WCF service contract shared 
- *                    between the chat server and clients.
- */
-
-namespace ChatShared
+namespace ChatServerTier
 {
-    // Makes this interface as a WCF service contract
     [ServiceContract]
-    public interface IChatService
+    public interface ChatServerInterface
     {
         // Attepts to sign in using the supplied user ID
         [OperationContract]
         SignInResult SignIn(string userId);
 
-        // Return all channels that currently exist on the server
+        // Signs out the specified user and releases their user ID
         [OperationContract]
-        List<ChannelInfo> GetChannels();
+        ChannelActionResult SignOut(string userId);
 
         // Attempt to join the specified user to specified channel
         [OperationContract]
@@ -35,8 +31,18 @@ namespace ChatShared
         [OperationContract]
         ChannelActionResult CreateChannel(string userId, string channelName);
 
-        // Signs out the specified user and releases their user ID
+        // Returns a list of channel names for UI
         [OperationContract]
-        ChannelActionResult SignOut(string userId);
+        List<string> GetChannelList();
+
+        /*
+        [OperationContract]
+        ChannelActionResult SendMessage();
+
+        [OperationContract]
+        ChannelActionResult SendFile();
+        */
+
+        // Start Private Message
     }
 }

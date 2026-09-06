@@ -4,7 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ServiceModel;
-using ChatShared;
+using ChatServerTier;
+using ChatResults;
 
 /**
  * ChatServerConnection.cs - Creates the WCF connection used by the polling client
@@ -16,13 +17,13 @@ namespace PollingClient
     public class ChatServerConnection
     {
         // Fix WCF address exposed by ChatServer project
-        private const string ServerAddress = "net.tcp://localhost:9000/ChatService";
+        private const string ServerAddress = "net.tcp://localhost:9000/ChatServerImplimentation";
 
         // Create and manage WCF client channels
-        private readonly ChannelFactory<IChatService> channelFactory;
+        private readonly ChannelFactory<ChatServerInterface> channelFactory;
 
         // Give client access to server's shared service contract
-        public IChatService Service { get; private set; }
+        public ChatServerInterface Service { get; private set; }
 
         // Set up WCF connection when this class is created
         public ChatServerConnection()
@@ -34,7 +35,7 @@ namespace PollingClient
             EndpointAddress endpoint = new EndpointAddress(ServerAddress);
 
             // Create factory that understands shared IChatService contract
-            channelFactory = new ChannelFactory<IChatService>(binding, endpoint);
+            channelFactory = new ChannelFactory<ChatServerInterface>(binding, endpoint);
 
             // Create client-side proxy used to call server opertions
             Service = channelFactory.CreateChannel();

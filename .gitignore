@@ -14,3 +14,4 @@ obj/
 # ReSharper / IDE caches if generated later
 _ReSharper*/
 *.DotSettings.user
+/.github/copilot-instructions.md
