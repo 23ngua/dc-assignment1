@@ -2,7 +2,12 @@
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
   </Folder>
-  <Project Path="ChatServer/ChatServer.csproj" Id="e24dfd0e-3e62-481c-9f78-d1a591a60649" />
-  <Project Path="ChatShared/ChatShared.csproj" Id="c8a6b655-93bd-41f4-a2c3-8044026133c1" />
-  <Project Path="PollingClient/PollingClient.csproj" Id="d3059c48-5c9c-4348-8f90-0af1aeeb6838" />
+  <Project Path="ChatResult/ChatResult.csproj" Id="a8adf0e9-5fa5-4fb4-8589-a75edc57dda6" />
+  <Project Path="ChatServerTier/ChatServerTier.csproj" Id="c51a75b9-2d56-4ca1-baf1-3284af5a0a9d">
+    <BuildDependency Project="ChatResult/ChatResult.csproj" />
+  </Project>
+  <Project Path="Database/Database.csproj" Id="d072db69-1c10-4c6c-a106-be9534f44200" />
+  <Project Path="PollingClient/PollingClient.csproj" Id="d3059c48-5c9c-4348-8f90-0af1aeeb6838">
+    <BuildDependency Project="ChatResult/ChatResult.csproj" />
+  </Project>
 </Solution>
