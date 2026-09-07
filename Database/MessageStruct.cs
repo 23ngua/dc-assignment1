@@ -6,16 +6,17 @@ using System.Threading.Tasks;
 
 namespace Database
 {
-    internal class MessageStruct
+    public class MessageStruct
     {
-        private Guid SenderID;
-        private string Message;
-        public MessageStruct(Guid id, string msg)
+        public string SenderId { get; }
+        public string Text { get; }
+        public DateTime Timestamp { get; }
+
+        public MessageStruct(string senderId, string text, DateTime timestamp)
         {
-            SenderID = id;
-            Message = msg;
+            SenderId = senderId;
+            Text = text;
+            Timestamp = timestamp;
         }
-        public Guid GetSenderID() { return SenderID; }
-        public string GetMessage() { return Message; }
     }
 }

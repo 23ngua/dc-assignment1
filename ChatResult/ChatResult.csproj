@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="ChannelActionResult.cs" />
     <Compile Include="FileDownloadResult.cs" />
+    <Compile Include="ChatMessage.cs" />
     <Compile Include="SharedFileInfomation.cs" />
     <Compile Include="SignInResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

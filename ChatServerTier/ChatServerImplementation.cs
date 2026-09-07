@@ -26,7 +26,6 @@ namespace ChatServerTier
         private static readonly object membershipLock = new object(); // Protects user-to-channel membership state
         private static readonly object channelsLock = new object(); // Protect the shared channel list
 
-
         public SignInResult SignIn(string userID)
         {
             if(!string.IsNullOrWhiteSpace(userID))
@@ -204,19 +203,48 @@ namespace ChatServerTier
         {
             return channels.GetChannelList();
         }
-        public ChannelActionResult SendMessage(string channelName, string message)
+
+        public ChannelActionResult SendMessage(string userID, string channelName, string message)
         {
-            Console.WriteLine(message);
-            channels.AddMessageToList(channelName, message);
-            return new ChannelActionResult { Success = true,
-                Message = "Message Sent Successfully" };
+            if (string.IsNullOrWhiteSpace(userID) || string.IsNullOrWhiteSpace(channelName) || string.IsNullOrWhiteSpace(message))
+            {
+                return new ChannelActionResult { Success = false, Message = "Invalid message" };
+            }
+
+            if (!IsMemberOfChannel(userID, channelName))
+            {
+                return new ChannelActionResult { Success = false, Message = "You are not a member of that channel." };
+            }
+
+            channels.AddMessage(channelName, userID.Trim(), message); // ADD MESSAGE YIPPEE
+
+            return new ChannelActionResult { Success = true, Message = "Message Sent Successfully" };
         }
-        public string GetNewestMessage(string channelName)
+
+        public int GetMessageCount(string channelName)
         {
-            string temp = channels.GetNewMessageFromList(channelName);
-            Console.WriteLine(temp);
-            return temp;
+            return channels.GetMessageCount(channelName);
         }
+
+        public List<ChatMessage> GetMessagesSince(string channelName, int sinceIndex)
+        {
+            List<MessageStruct> sourceMessages = channels.GetMessagesSince(channelName, sinceIndex);
+            List<ChatMessage> result = new List<ChatMessage>();
+
+            // Conversion of list from ChatMessage to MessageStruct
+            foreach (MessageStruct source in sourceMessages)
+            {
+                ChatMessage converted = new ChatMessage();
+                converted.SenderId = source.SenderId;
+                converted.Text = source.Text;
+                converted.Timestamp = source.Timestamp;
+
+                result.Add(converted);
+            }
+
+            return result;
+        }
+
 
         public ChannelActionResult ShareFile(string userID, string channelName, string fileName, byte[] fileBytes)
         {
@@ -228,13 +256,9 @@ namespace ChatServerTier
             string cleanUserID = userID.Trim();
 
             // CHannel Validation
-
-            lock (membershipLock)
+            if (!IsMemberOfChannel(cleanUserID, channelName))
             {
-                if (!userChannels.TryGetValue(cleanUserID, out string actualChannel) || actualChannel != channelName)
-                {
-                    return new ChannelActionResult { Success = false, Message = "You are not a member of that channel." };
-                }
+                return new ChannelActionResult { Success = false, Message = "You are not a member of that channel." };
             }
 
             // Extension type validation
@@ -258,8 +282,7 @@ namespace ChatServerTier
 
         public List<SharedFileInformation> GetSharedFiles(string channelName)
         {
-            return sharedFiles.GetFilesForChannel(channelName)
-                .Select(f => new SharedFileInformation { FileID = f.GetFileID(), FileName = f.GetFileName(), SharedBy = f.GetSharedBy() }).ToList();
+            return sharedFiles.GetFilesForChannel(channelName).Select(f => new SharedFileInformation { FileID = f.GetFileID(), FileName = f.GetFileName(), SharedBy = f.GetSharedBy() }).ToList();
         }
 
         public FileDownloadResult DownloadFile(string userID, Guid fileID)
@@ -271,16 +294,23 @@ namespace ChatServerTier
             {
                 return new FileDownloadResult { Success = false, Message = "That file no longer exists." };
             }
-                
-            lock (membershipLock)
+
+            if (!IsMemberOfChannel(userID, file.GetChannelName()))
             {
-                if (!userChannels.TryGetValue(cleanUserID, out string actualChannel) || actualChannel != file.GetChannelName())
-                {
-                    return new FileDownloadResult { Success = false, Message = "You are not a member of that channel." };
-                }
+                return new FileDownloadResult { Success = false, Message = "You are not a member of that channel." };
             }
 
             return new FileDownloadResult { Success = true, FileName = file.GetFileName(), FileBytes = file.GetFileBytes() };
+        }
+
+        private bool IsMemberOfChannel(string userID, string channelName)
+        {
+            string cleanUserID = (userID ?? "").Trim();
+
+            lock (membershipLock)
+            {
+                return userChannels.TryGetValue(cleanUserID, out string actualChannel) && actualChannel == channelName;
+            }
         }
     }
 }
