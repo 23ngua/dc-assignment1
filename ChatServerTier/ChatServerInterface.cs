@@ -41,11 +41,5 @@ namespace ChatServerTier
         [OperationContract]
         string GetNewestMessage(string channelName);
 
-        /*
-        [OperationContract]
-        ChannelActionResult SendFile();
-        */
-
-        // Start Private Message
     }
 }

@@ -10,15 +10,11 @@ namespace Database
 {
     internal class ChannelStruct
     {
-        private List<FileStruct> FileList;
         private BlockingCollection<string> newMessages;
         public ChannelStruct()
         {
-            FileList = new List<FileStruct>();
             newMessages = new BlockingCollection<string>();
         }
-
-        public List<FileStruct> GetFile() { return FileList; }
         
         public void AddNewMessage(string message)
         {
@@ -27,12 +23,6 @@ namespace Database
         public string GetNewMessage()
         {
             return newMessages.Take();
-        }
-
-        public void AddFile(string name, Guid sharedby)
-        {
-            FileStruct file = new FileStruct(name, sharedby);
-            FileList.Add(file);
         }
     }
 }

@@ -216,15 +216,5 @@ namespace ChatServerTier
             Console.WriteLine(temp);
             return temp;
         }
-        /*
-        public ChannelActionResult SendFile()
-        {
-
-        }
-        */
-
-
-
-
     }
 }
