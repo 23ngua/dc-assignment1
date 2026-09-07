@@ -388,5 +388,21 @@ namespace PollingClient
                 ChannelListStatusTextBlock.Text = "An unexpected error occurred while creating the channel.";
             }
         }
+        private void SendMessageButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Read message and put in string
+            string message = MessageTextBox.Text.Trim();
+            string channelName = CurrentChannelTextBlock.Text;
+
+            // Give immediate feedback when no name was entered
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                //.Text = "Please enter a message.";
+                return;
+            }
+            ChannelActionResult result = serverConnection.Service.SendMessage(channelName, message);
+            MessageTextBox.Clear();
+
+        }
     }
 }

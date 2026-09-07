@@ -35,10 +35,13 @@ namespace ChatServerTier
         [OperationContract]
         List<string> GetChannelList();
 
-        /*
         [OperationContract]
-        ChannelActionResult SendMessage();
+        ChannelActionResult SendMessage(string channelName, string message);
 
+        [OperationContract]
+        string GetNewestMessage(string channelName);
+
+        /*
         [OperationContract]
         ChannelActionResult SendFile();
         */

@@ -52,5 +52,13 @@ namespace Database
         {
             return _channel.ContainsKey(name);
         }
+        public void AddMessageToList(string channelName, string msg)
+        {
+            _channel[channelName].AddNewMessage(msg);
+        }
+        public string GetNewMessageFromList(string channelName)
+        {
+            return _channel[channelName].GetNewMessage();
+        }
     }
 }

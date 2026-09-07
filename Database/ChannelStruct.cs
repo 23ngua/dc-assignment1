@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,24 +11,23 @@ namespace Database
     internal class ChannelStruct
     {
         private List<FileStruct> FileList;
+        private BlockingCollection<string> newMessages;
         public ChannelStruct()
         {
             FileList = new List<FileStruct>();
-            //Members = new List<string>();
+            newMessages = new BlockingCollection<string>();
         }
 
         public List<FileStruct> GetFile() { return FileList; }
-        //public List<string> GetMembers() { return Members; }
-
-        /*public void AddMember(string Name)
+        
+        public void AddNewMessage(string message)
         {
-            Members.Add(Name);
+            newMessages.Add(message);
         }
-
-        public void PopMember(string Name)
+        public string GetNewMessage()
         {
-            Members.Remove(Name);
-        }*/
+            return newMessages.Take();
+        }
 
         public void AddFile(string name, Guid sharedby)
         {
