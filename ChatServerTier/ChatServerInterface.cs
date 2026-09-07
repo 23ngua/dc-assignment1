@@ -35,6 +35,11 @@ namespace ChatServerTier
         [OperationContract]
         List<string> GetChannelList();
 
+        [OperationContract]
+        ChannelActionResult SendMessage(string channelName, string message);
+
+        [OperationContract]
+        string GetNewestMessage(string channelName);
         /* --- FILE SHARING --- */
 
         [OperationContract]
@@ -46,6 +51,5 @@ namespace ChatServerTier
         [OperationContract]
         FileDownloadResult DownloadFile(string userId, Guid fileId);
 
-        // Start Private Message
     }
 }

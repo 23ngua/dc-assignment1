@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.ServiceModel;
+using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Schema;
@@ -203,11 +204,18 @@ namespace ChatServerTier
         {
             return channels.GetChannelList();
         }
-
-        /*
-        public ChannelActionResult SendMessage()
+        public ChannelActionResult SendMessage(string channelName, string message)
         {
-
+            Console.WriteLine(message);
+            channels.AddMessageToList(channelName, message);
+            return new ChannelActionResult { Success = true,
+                Message = "Message Sent Successfully" };
+        }
+        public string GetNewestMessage(string channelName)
+        {
+            string temp = channels.GetNewMessageFromList(channelName);
+            Console.WriteLine(temp);
+            return temp;
         }
         */
 

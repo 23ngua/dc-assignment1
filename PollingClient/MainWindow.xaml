@@ -256,8 +256,9 @@
                         Grid.Column="1"
                         Content="Send"
                         Width="100"
-                        Height="36"/>
-
+                        Height="36"
+                        Click="SendMessageButton_Click"/>
+                
             </Grid>
 
             <!-- Bottom channel controls -->
