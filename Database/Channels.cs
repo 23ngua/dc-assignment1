@@ -20,7 +20,7 @@ namespace Database
             _channel.Add("general", temp);
         }
         //Getters for data
-        public List<FileStruct> GetFiles(string name) { return _channel[name].GetFile(); }
+        //public List<FileStruct> GetFiles(string name) { return _channel[name].GetFile(); }
         //public List<string> GetMembers(string name) { return _channel[name].GetMembers(); }
        
         // Setters for data
