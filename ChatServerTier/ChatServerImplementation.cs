@@ -31,17 +31,17 @@ namespace ChatServerTier
         {
             if(!string.IsNullOrWhiteSpace(userID))
             {
-                string cleanUserId = userID.Trim();
+                string cleanUserID = userID.Trim();
                 lock (usersLock)
                 {
                     // Reject request if this ID is already signed in
-                    if (signedInUsers.Contains(cleanUserId))
+                    if (signedInUsers.Contains(cleanUserID))
                     {
                         return new SignInResult { Success = false, 
                             Message = "That user ID is already signed in." };
                     }
                     // The ID is available, so reserve it for this user
-                    signedInUsers.Add(cleanUserId);
+                    signedInUsers.Add(cleanUserID);
                 }
                 return new SignInResult { Success = true, 
                     Message = "Sign-in successful." };
@@ -55,20 +55,20 @@ namespace ChatServerTier
         {
             if (!string.IsNullOrWhiteSpace(userID))
             {
-                string cleanUserId = userID.Trim();
+                string cleanUserID = userID.Trim();
 
                 lock (usersLock)
                 {
-                    if (signedInUsers.Contains(cleanUserId))    // Checks if user is currently signed in
+                    if (signedInUsers.Contains(cleanUserID))    // Checks if user is currently signed in
                     {
                         lock (membershipLock)   // Maybe move outside lock, but stops case where new user takes id before 
                         {
-                            if (userChannels.ContainsKey(cleanUserId))
+                            if (userChannels.ContainsKey(cleanUserID))
                             {
-                                userChannels.Remove(cleanUserId);
+                                userChannels.Remove(cleanUserID);
                             }
                         }
-                        signedInUsers.Remove(cleanUserId);
+                        signedInUsers.Remove(cleanUserID);
                         return new ChannelActionResult { Success = true, 
                             Message = "Sucsessfully signed Out User" };
                     } else {
@@ -218,20 +218,20 @@ namespace ChatServerTier
             return temp;
         }
 
-        public ChannelActionResult ShareFile(string userId, string channelName, string fileName, byte[] fileBytes)
+        public ChannelActionResult ShareFile(string userID, string channelName, string fileName, byte[] fileBytes)
         {
-            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(channelName) || fileBytes == null)
+            if (string.IsNullOrWhiteSpace(userID) || string.IsNullOrWhiteSpace(channelName) || fileBytes == null)
             {
                 return new ChannelActionResult { Success = false, Message = "Invalid file share request." };
             }
 
-            string cleanUserId = userId.Trim();
+            string cleanUserID = userID.Trim();
 
             // CHannel Validation
 
             lock (membershipLock)
             {
-                if (!userChannels.TryGetValue(cleanUserId, out string actualChannel) || actualChannel != channelName)
+                if (!userChannels.TryGetValue(cleanUserID, out string actualChannel) || actualChannel != channelName)
                 {
                     return new ChannelActionResult { Success = false, Message = "You are not a member of that channel." };
                 }
@@ -251,7 +251,7 @@ namespace ChatServerTier
                 return new ChannelActionResult { Success = false, Message = "File exceeds the 2 MB limit." };
             }
 
-            sharedFiles.AddFile(new FileStruct(fileName, cleanUserId, channelName, fileBytes));
+            sharedFiles.AddFile(new FileStruct(fileName, cleanUserID, channelName, fileBytes));
 
             return new ChannelActionResult { Success = true, Message = "File shared successfully." };
         }
@@ -259,13 +259,13 @@ namespace ChatServerTier
         public List<SharedFileInformation> GetSharedFiles(string channelName)
         {
             return sharedFiles.GetFilesForChannel(channelName)
-                .Select(f => new SharedFileInformation { FileId = f.GetFileID(), FileName = f.GetFileName(), SharedBy = f.GetSharedBy() }).ToList();
+                .Select(f => new SharedFileInformation { FileID = f.GetFileID(), FileName = f.GetFileName(), SharedBy = f.GetSharedBy() }).ToList();
         }
 
-        public FileDownloadResult DownloadFile(string userId, Guid fileId)
+        public FileDownloadResult DownloadFile(string userID, Guid fileID)
         {
-            string cleanUserId = (userId ?? "").Trim(); // Default to ""
-            FileStruct file = sharedFiles.GetFile(fileId);
+            string cleanUserID = (userID ?? "").Trim(); // Default to ""
+            FileStruct file = sharedFiles.GetFile(fileID);
 
             if (file == null)
             {
@@ -274,7 +274,7 @@ namespace ChatServerTier
                 
             lock (membershipLock)
             {
-                if (!userChannels.TryGetValue(cleanUserId, out string actualChannel) || actualChannel != file.GetChannelName())
+                if (!userChannels.TryGetValue(cleanUserID, out string actualChannel) || actualChannel != file.GetChannelName())
                 {
                     return new FileDownloadResult { Success = false, Message = "You are not a member of that channel." };
                 }

@@ -7,7 +7,7 @@ namespace ChatResult
     public class SharedFileInformation
     {
         [DataMember] 
-        public Guid FileId { get; set; }
+        public Guid FileID { get; set; }
 
         [DataMember] 
         public string FileName { get; set; }

@@ -1,102 +1,284 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-
+﻿using PollingClient.Views;
 using ChatServerTier;
-using System.ServiceModel;
-using System.ServiceModel.Channels;
-using System.Security.Policy;
-using System.Threading;
 using ChatResult;
+using System;
+using System.Collections.Generic;
+using System.ServiceModel;
+using System.Threading;
+using System.Windows;
 
 namespace PollingClient
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
-        // This stores the WCF connection used to communicate with chat server
+        private readonly SignInView signInView = new SignInView();
+        private readonly ChatShellView chatShellView = new ChatShellView();
+
         private ChatServerConnection serverConnection;
-
-        // This stores the user ID accepted by server
-        private string currentUserId;
-
-        // This stores the channel the client is currently inside
+        private string currentUserID;
         private string currentChannelName;
 
-        // Background thread used to repeatedly request updates from the server
+        // Poll Settings
         private Thread pollingThread;
-
-        // Controls whether the background polling loop should continue running
         private volatile bool pollingActive;
-
-        // Delay between polling requests in milliseconds
-        private const int PollingIntervalMs = 1000;
+        private const int PollingInterval = 1000;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            // Declare the event handlers to the corresponding method calls
+            signInView.SignInRequested += SignInView_SignInRequested;
+
+            chatShellView.JoinRequested += ChatShellView_JoinRequested;
+            chatShellView.CreateChannelRequested += ChatShellView_CreateChannelRequested;
+            chatShellView.LeaveRequested += ChatShellView_LeaveRequested;
+            chatShellView.SendMessageRequested += ChatShellView_SendMessageRequested;
+            chatShellView.ShareFileRequested += ChatShellView_ShareFileRequested;
+            chatShellView.DownloadFileRequested += ChatShellView_DownloadFileRequested;
+            chatShellView.SignOutRequested += ChatShellView_SignOutRequested;
+
+            MainContent.Content = signInView;
+            Closed += MainWindow_Closed;
         }
 
-        // Runs continuously on background polling thread
+        /* --- SIGN IN --- */
+        private void SignInView_SignInRequested(object sender, string userID)
+        {
+            try
+            {
+                if (serverConnection == null)
+                {
+                    serverConnection = new ChatServerConnection();
+                }
+
+                SignInResult result = serverConnection.Service.SignIn(userID);
+
+                if (!result.Success)
+                {
+                    signInView.ShowStatus(result.Message);
+                    return;
+                }
+
+                currentUserID = userID.Trim();
+
+                List<string> channels = serverConnection.Service.GetChannelList();
+                chatShellView.SetChannels(channels);
+                chatShellView.ShowChannelListStatus(channels.Count == 0 ? "No channels currently exist." : "");
+
+                MainContent.Content = chatShellView;
+                StartPolling();
+            }
+            catch (EndpointNotFoundException)
+            {
+                signInView.ShowStatus("Could not connect to the chat server. Please make sure the server is running.");
+            }
+            catch (CommunicationException)
+            {
+                signInView.ShowStatus("Communication with the chat server failed.");
+            }
+            catch (Exception)
+            {
+                signInView.ShowStatus("An unexpected error occurred while signing in.");
+            }
+        }
+
+        /* --- CHANNELS --- */
+
+        private void ChatShellView_JoinRequested(object sender, string channelName)
+        {
+            try
+            {
+                ChannelActionResult result = serverConnection.Service.JoinChannel(currentUserID, channelName);
+                chatShellView.ShowChannelListStatus(result.Message);
+
+                if (result.Success)
+                {
+                    currentChannelName = channelName;
+                    chatShellView.ShowChannelContent(channelName);
+                }
+                else
+                {
+                    chatShellView.HideChannelContent();
+                }
+            }
+            catch (CommunicationException)
+            {
+                chatShellView.ShowChannelListStatus("An unexpected error occurred while joining the channel.");
+            }
+        }
+
+        private void ChatShellView_CreateChannelRequested(object sender, string channelName)
+        {
+            try
+            {
+                ChannelActionResult result = serverConnection.Service.CreateChannel(currentUserID, channelName);
+                chatShellView.ShowChannelListStatus(result.Message);
+
+                if (result.Success)
+                {
+                    chatShellView.ClearNewChannelName();
+                    chatShellView.SetChannels(serverConnection.Service.GetChannelList());
+                }
+            }
+            catch (CommunicationException)
+            {
+                chatShellView.ShowChannelListStatus("Communication with the chat server failed.");
+            }
+            catch (Exception)
+            {
+                chatShellView.ShowChannelListStatus("An unexpected error occurred while creating the channel.");
+            }
+        }
+
+        private void ChatShellView_LeaveRequested(object sender, EventArgs e)
+        {
+            try
+            {
+                ChannelActionResult result = serverConnection.Service.LeaveChannel(currentUserID);
+
+                if (result.Success)
+                {
+                    currentChannelName = null;
+                    chatShellView.ClearConversation();
+                    chatShellView.HideChannelContent();
+                    chatShellView.SetChannels(serverConnection.Service.GetChannelList());
+                    chatShellView.ShowChannelListStatus(result.Message);
+                }
+            }
+            catch (CommunicationException)
+            {
+                chatShellView.ShowChannelListStatus("Communication with the chat server failed.");
+            }
+            catch (Exception)
+            {
+                chatShellView.ShowChannelListStatus("An unexpected error occurred while leaving the channel.");
+            }
+        }
+
+        private void ChatShellView_SendMessageRequested(object sender, string message)
+        {
+            try
+            {
+                serverConnection.Service.SendMessage(currentChannelName, message);
+                chatShellView.ClearMessageBox();
+            }
+            catch (CommunicationException)
+            {
+                chatShellView.ShowSharedFileStatus("Communication with the chat server failed.");
+            }
+        }
+
+        /* --- FILES --- */
+
+        private void ChatShellView_ShareFileRequested(object sender, ShareFileEventArgs e)
+        {
+            try
+            {
+                ChannelActionResult result = serverConnection.Service.ShareFile(currentUserID, currentChannelName, e.FileName, e.FileBytes);
+                chatShellView.ShowSharedFileStatus(result.Message);
+            }
+            catch (CommunicationException)
+            {
+                chatShellView.ShowSharedFileStatus("Communication with the chat server failed.");
+            }
+            catch (Exception)
+            {
+                chatShellView.ShowSharedFileStatus("An unexpected error occurred while sharing the file.");
+            }
+        }
+
+        private void ChatShellView_DownloadFileRequested(object sender, Guid fileID)
+        {
+            try
+            {
+                FileDownloadResult result = serverConnection.Service.DownloadFile(currentUserID, fileID);
+
+                if (!result.Success)
+                {
+                    chatShellView.ShowSharedFileStatus(result.Message);
+                    return;
+                }
+
+                string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), result.FileName);
+                System.IO.File.WriteAllBytes(tempPath, result.FileBytes);
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(tempPath) { UseShellExecute = true });
+            }
+            catch (CommunicationException)
+            {
+                chatShellView.ShowSharedFileStatus("Communication with the chat server failed.");
+            }
+            catch (Exception)
+            {
+                chatShellView.ShowSharedFileStatus("An unexpected error occurred while opening the file.");
+            }
+        }
+
+        /* --- MESSAGES --- */
+
+        private void ChatShellView_SignOutRequested(object sender, EventArgs e)
+        {
+            SignOut();
+            currentChannelName = null;
+            currentUserID = null;
+
+            chatShellView.ClearConversation();
+            chatShellView.HideChannelContent();
+            MainContent.Content = signInView;
+        }
+
+        private void SignOut()
+        {
+            pollingActive = false;
+            try
+            {
+                if (serverConnection != null && !string.IsNullOrWhiteSpace(currentUserID))
+                {
+                    serverConnection.Service.SignOut(currentUserID);
+                }
+            }
+            catch (Exception)
+            {
+                // Ignore errors during shutdown
+            }
+        }
+
+        private void MainWindow_Closed(object sender, EventArgs e) => SignOut();
+
+        /* --- POLLING --- */
+
+        private void StartPolling()
+        {
+            if (pollingThread != null && pollingThread.IsAlive) return;
+
+            pollingActive = true;
+            pollingThread = new Thread(PollingLoop) { IsBackground = true };
+            pollingThread.Start();
+        }
+
         private void PollingLoop()
         {
-            // Give the polling thread its own WCF connection
             ChatServerConnection pollingConnection = null;
 
-            // Continue until the client tells the polling thread to stop
             while (pollingActive)
             {
                 try
                 {
-                    // Create the polling connection the first time it is needed
                     if (pollingConnection == null)
                     {
                         pollingConnection = new ChatServerConnection();
                     }
 
-                    // Ask the server for the latest channel list
                     List<string> channels = pollingConnection.Service.GetChannelList();
 
-                    // WPF controls must only be changed on the UI thread
                     Dispatcher.Invoke(() =>
                     {
-                        // Only refresh this lsit while the channel-list veiw is visible
-                        if (ChannelListView.Visibility == Visibility.Visible)
+                        if (currentChannelName == null)
                         {
-                            // Remember the currently selected channel if there is no one
-                            string selectedChannel = ChannelListBox.SelectedItem as string;
-
-                            // Replace the old channel snapshot
-                            ChannelListBox.Items.Clear();
-
-                            // Display every current channel returned by the server
-                            foreach (string channel in channels)
-                            {
-                                ChannelListBox.Items.Add(channel);
-                            }
-
-                            // Restore the previous selection if that channel still exists
-                            if (selectedChannel != null && ChannelListBox.Items.Contains(selectedChannel))
-                            {
-                                ChannelListBox.SelectedItem = selectedChannel;
-                            }
+                            chatShellView.SetChannels(channels);
                         }
                     });
 
-                    // Poll for file changes
                     string channelToPoll = currentChannelName;
 
                     if (channelToPoll != null)
@@ -106,411 +288,28 @@ namespace PollingClient
 
                         Dispatcher.Invoke(() =>
                         {
-                            if (ChannelConversationView.Visibility == Visibility.Visible && currentChannelName == channelToPoll)
+                            if (currentChannelName == channelToPoll)
                             {
-                                object selectedFile = SharedFilesListBox.SelectedItem;
+                                chatShellView.SetSharedFiles(files);
 
-                                SharedFilesListBox.Items.Clear();
-
-                                foreach (SharedFileInformation file in files)
+                                if (!string.IsNullOrEmpty(message))
                                 {
-                                    SharedFilesListBox.Items.Add(file);
+                                    chatShellView.AppendMessage(message);
                                 }
-
-                                // Restore selection by matching FileId, since these are new object instances each poll
-                                if (selectedFile is SharedFileInformation previouslySelected)
-                                {
-                                    foreach (SharedFileInformation file in SharedFilesListBox.Items)
-                                    {
-                                        if (file.FileId == previouslySelected.FileId)
-                                        {
-                                            SharedFilesListBox.SelectedItem = file;
-                                            break;
-                                        }
-                                    }
-                                }
-                                MessagesListBox.Items.Add(message);
                             }
                         });
                     }
                 }
                 catch (CommunicationException)
                 {
-                    // Discard a failed WCF connection so the next poll can reconnect
                     pollingConnection = null;
                 }
                 catch (Exception)
                 {
-                    // Keep the polling thread alive after an unexpected polling error
                     pollingConnection = null;
                 }
 
-                // Wait before asking the server for another update
-                Thread.Sleep(PollingIntervalMs);
-            }
-        }
-
-        // Starts the background polling thread
-        private void StartPolling()
-        {
-            // Do not start another polling thread if one is already running
-            if (pollingThread != null && pollingThread.IsAlive)
-            {
-                return;
-            }
-
-            // Tell the polling loop that it should continue running
-            pollingActive = true;
-
-            // Create a new thread that will execute PollingLoop()
-            pollingThread = new Thread(PollingLoop);
-
-            // Allow the application to close even if this thread is still running
-            pollingThread.IsBackground = true;
-
-            // Begin executing the polling loop in the background
-            pollingThread.Start();
-        }
-
-        // Runs when the main client window has been closed
-        private void MainWindow_Closed(object sender, EventArgs e)
-        {
-            // Tell the background polling loop to stop running
-            pollingActive = false;
-
-            try
-            {
-                // Only attempt sign-out if this client actually signed in
-                if (serverConnection != null && !string.IsNullOrWhiteSpace(currentUserId))
-                {
-                    // Ask the server to release this user's session and membership
-                    serverConnection.Service.SignOut(currentUserId);
-                }
-            }
-            catch (CommunicationException)
-            {
-                // Ignore shutdown communication errors because the window is already closing
-            }
-            catch (Exception)
-            {
-                // Prevent an unexpected shutdown error from blocking application exit
-            }
-        }
-
-        // Runs when user clicks Sign In button
-        private void SignInButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Read user ID entered into text box
-            string userId = UserIdTextBox.Text;
-
-            try
-            {
-                // Create server connection the first time it is needed
-                if (serverConnection == null)
-                {
-                    serverConnection = new ChatServerConnection();
-                }
-
-                // Send sign-in request to WCF server
-                SignInResult result = serverConnection.Service.SignIn(userId);
-
-                // Display message returned by server
-                StatusTextBlock.Text = result.Message;
-
-                // Continue only when sign-in was successful 
-                if (result.Success)
-                {
-                    // Remember the ID accepted for this client
-                    currentUserId = userId.Trim();
-
-                    // Ask server for all currently available channels
-                    List<string> channels = serverConnection.Service.GetChannelList();
-
-                    // Remove any old entries before displaying latest list
-                    ChannelListBox.Items.Clear();
-
-                    // Add each server channel to channel list
-                    foreach (string channel in channels)
-                    {
-                        ChannelListBox.Items.Add(channel);
-                    }
-
-                    // Give feedback if server currently has no channels
-                    if (channels.Count == 0)
-                    {
-                        ChannelListStatusTextBlock.Text = "No channels currently exist.";
-                    }
-                    else
-                    {
-                        ChannelListStatusTextBlock.Text = "";
-                    }
-
-                    // Hide sign-in view now that login has succeeded
-                    SignInView.Visibility = Visibility.Collapsed;
-
-                    // Show the channel-list view
-                    ChannelListView.Visibility = Visibility.Visible;
-
-                    // Start background polling now that the client is signed in
-                    StartPolling();
-                }
-            }
-            catch (EndpointNotFoundException)
-            {
-                // The client could not find running chat server
-                StatusTextBlock.Text = "Could not connect to the chat server. Please make sure the server is running.";
-            }
-            catch (CommunicationException)
-            {
-                // A WCF communication problem occurred
-                StatusTextBlock.Text = "Communication with the chat server failed.";
-            }
-            catch (Exception)
-            {
-                // Prevent an unexpected error from crashing client
-                StatusTextBlock.Text = "An unexpected error occurred while signing in.";
-            }
-        }
-
-        // Runs when the user clicks the Join Channel button
-        private void JoinChannelButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Make sure user selected a channel first
-            if (ChannelListBox.SelectedItem == null)
-            {
-                ChannelListStatusTextBlock.Text = "Please select a channel to join.";
-
-                return;
-            }
-
-            // Get selected channel name from ListBox
-            string channelName = ChannelListBox.SelectedItem.ToString();
-
-            try
-            {
-                // Ask server to join user to selected channel
-                ChannelActionResult result = serverConnection.Service.JoinChannel(currentUserId, channelName);
-
-                // Display server's result to user
-                ChannelListStatusTextBlock.Text = result.Message;
-
-                // Enter the conversation view only when the server accepts the join
-                if (result.Success)
-                {
-                    // Remember which channel the client successfully joined
-                    currentChannelName = channelName;
-
-                    // Show current channel name at top of conversation view
-                    CurrentChannelTextBlock.Text = currentChannelName;
-
-                    // Clear any previous channel-list message
-                    ChannelListStatusTextBlock.Text = "";
-
-                    // Hide the channel-list view
-                    ChannelListView.Visibility = Visibility.Collapsed;
-
-                    // Show channel conversation view
-                    ChannelConversationView.Visibility = Visibility.Visible;
-                }
-            }
-            catch (CommunicationException)
-            {
-                // Handle a WCF communication failure without crashing client
-                ChannelListStatusTextBlock.Text = "An unexpected error occurred while joining the channel.";
-            }
-        }
-
-        // Runs when the user clicks the Leave Channel button
-        private void LeaveChannelButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                // Ask the server to remove this user from their current channel
-                ChannelActionResult result = serverConnection.Service.LeaveChannel(currentUserId);
-
-                // Only return to channel list if server accepted the leave
-                if (result.Success)
-                {
-                    // The client is no longer inside a channel
-                    currentChannelName = null;
-
-                    // Clear conversation data from previous channel
-                    MessagesListBox.Items.Clear();
-                    MembersListBox.Items.Clear();
-                    SharedFilesListBox.Items.Clear();
-                    MessageTextBox.Clear();
-                    SharedFilesStatusTextBlock.Text = "";
-
-                    // Get a fresh channel list from server
-                    List<string> channels = serverConnection.Service.GetChannelList();
-
-                    // Replace old channel-list contents
-                    ChannelListBox.Items.Clear();
-
-                    foreach (string channel in channels)
-                    {
-                        ChannelListBox.Items.Add(channel);
-                    }
-
-                    // Display successful leave message
-                    ChannelListStatusTextBlock.Text = result.Message;
-
-                    // Hide conversation view
-                    ChannelConversationView.Visibility = Visibility.Collapsed;
-
-                    // Return to channel-list view
-                    ChannelListView.Visibility = Visibility.Visible;
-                }
-            }
-            catch (CommunicationException)
-            {
-                // Handle a WCF communication problem without crashing
-                ChannelListStatusTextBlock.Text = "Communication with the chat server failed.";
-            }
-            catch (Exception)
-            {
-                // Handle any unexpected problem cleanly
-                ChannelListStatusTextBlock.Text = "An unexpected error occurred while leaving the channel.";
-            }
-        }
-
-        // Runs when the user clicks the Create Channel button
-        private void CreateChannelButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Read and clean channel name entered by user
-            string channelName = NewChannelNameTextBox.Text.Trim();
-
-            // Give immediate feedback when no name was entered
-            if (string.IsNullOrWhiteSpace(channelName))
-            {
-                ChannelListStatusTextBlock.Text = "Please enter a channel name.";
-
-                return;
-            }
-
-            try
-            {
-                // Ask the server to create the new channel
-                ChannelActionResult result = serverConnection.Service.CreateChannel(currentUserId, channelName);
-
-                // Display the server's response
-                ChannelListStatusTextBlock.Text = result.Message;
-
-                // Refresh the channel list only when creation succeeds
-                if (result.Success)
-                {
-                    // Clear the channel-name input after successful creation
-                    NewChannelNameTextBox.Clear();
-
-                    // Ask server for latest authoritative channel lsit
-                    List<string> channels = serverConnection.Service.GetChannelList();
-
-                    // Remove old list before rebuilding it
-                    ChannelListBox.Items.Clear();
-
-                    // Display every current server channel
-                    foreach (string channel in channels)
-                    {
-                        ChannelListBox.Items.Add(channel);
-                    }
-                }
-            }
-            catch (CommunicationException)
-            {
-                // Handle a WCF communication failure without crashing
-                ChannelListStatusTextBlock.Text = "Communication with the chat server failed.";
-            }
-            catch (Exception)
-            {
-                // Handle any unexpected problem cleanly
-                ChannelListStatusTextBlock.Text = "An unexpected error occurred while creating the channel.";
-            }
-        }
-        private void SendMessageButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Read message and put in string
-            string message = MessageTextBox.Text.Trim();
-            string channelName = CurrentChannelTextBlock.Text;
-
-            // Give immediate feedback when no name was entered
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                //.Text = "Please enter a message.";
-                return;
-            }
-            ChannelActionResult result = serverConnection.Service.SendMessage(channelName, message);
-            MessageTextBox.Clear();
-        }
-
-
-        private void ShareFileButton_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "Supported files (*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.txt)|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.txt"
-            };
-
-            // Do nothing if the user cancels dialogue
-            if (dialog.ShowDialog() != true)
-            {
-                return;
-            }
-
-            try
-            {
-                byte[] fileBytes = System.IO.File.ReadAllBytes(dialog.FileName); // Read the chosen file into memory
-
-                // Check size client side first for fast feedbacker, server also enforces
-                if (fileBytes.Length > 2 * 1024 * 1024)
-                {
-                    SharedFilesStatusTextBlock.Text = "File exceeds the 2 MB limit.";
-                    return;
-                }
-
-                string fileName = System.IO.Path.GetFileName(dialog.FileName);
-                ChannelActionResult result = serverConnection.Service.ShareFile(currentUserId, currentChannelName, fileName, fileBytes);
-                SharedFilesStatusTextBlock.Text = result.Message; // Display the servers response
-            }
-            catch (CommunicationException)
-            {
-                SharedFilesStatusTextBlock.Text = "Communication with the chat server failed.";
-            }
-            catch (Exception)
-            {
-                SharedFilesStatusTextBlock.Text = "An unexpected error occurred while sharing the file.";
-            }
-        }
-
-        private void SharedFilesListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (!(SharedFilesListBox.SelectedItem is SharedFileInformation selectedFile))
-            {
-                return;
-            }
-
-            try
-            {
-                FileDownloadResult result = serverConnection.Service.DownloadFile(currentUserId, selectedFile.FileId); //Retrieve Files bytes
-
-                if (!result.Success)
-                {
-                    SharedFilesStatusTextBlock.Text = result.Message;
-                    return;
-                }
-
-                // Write the file to a temp location so the OS can open it with its default app
-                string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), result.FileName);
-                System.IO.File.WriteAllBytes(tempPath, result.FileBytes);
-
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(tempPath) { UseShellExecute = true });
-            }
-            catch (CommunicationException)
-            {
-                SharedFilesStatusTextBlock.Text = "Communication with the chat server failed.";
-            }
-            catch (Exception)
-            {
-                SharedFilesStatusTextBlock.Text = "An unexpected error occurred while opening the file.";
+                Thread.Sleep(PollingInterval);
             }
         }
     }
