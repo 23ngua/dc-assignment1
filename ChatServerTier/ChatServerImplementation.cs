@@ -220,6 +220,8 @@ namespace ChatServerTier
 
             string cleanUserId = userId.Trim();
 
+            // CHannel Validation
+
             lock (membershipLock)
             {
                 if (!userChannels.TryGetValue(cleanUserId, out string actualChannel) || actualChannel != channelName)
@@ -228,6 +230,7 @@ namespace ChatServerTier
                 }
             }
 
+            // Extension type validation
             string ext = System.IO.Path.GetExtension(fileName);
             var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".txt" };
             if (!allowed.Contains(ext))
@@ -235,6 +238,7 @@ namespace ChatServerTier
                 return new ChannelActionResult { Success = false, Message = "That file type is not allowed." };
             }
 
+            // File size validation
             if (fileBytes.Length > 2 * 1024 * 1024)
             {
                 return new ChannelActionResult { Success = false, Message = "File exceeds the 2 MB limit." };
@@ -253,7 +257,7 @@ namespace ChatServerTier
 
         public FileDownloadResult DownloadFile(string userId, Guid fileId)
         {
-            string cleanUserId = (userId ?? "").Trim();
+            string cleanUserId = (userId ?? "").Trim(); // Default to ""
             FileStruct file = sharedFiles.GetFile(fileId);
 
             if (file == null)

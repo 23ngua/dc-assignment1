@@ -30,7 +30,6 @@ namespace PollingClient
         // This stores the WCF connection used to communicate with chat server
         private ChatServerConnection serverConnection;
 
-
         // This stores the user ID accepted by server
         private string currentUserId;
 
