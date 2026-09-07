@@ -286,16 +286,14 @@ namespace PollingClient
 
                     Dispatcher.Invoke(() =>
                     {
-                        if (currentChannelName == null)
-                        {
-                            chatShellView.SetChannels(channels);
-                        }
+                            chatShellView.SetChannels(channels); // Always update channel list 
                     });
 
                     string channelToPoll = currentChannelName;
 
                     if (channelToPoll != null)
                     {
+                        List<string> members = pollingConnection.Service.GetMemberList(channelToPoll);
                         List<SharedFileInformation> files = pollingConnection.Service.GetSharedFiles(channelToPoll);
                         List<ChatMessage> newMessages = pollingConnection.Service.GetMessagesSince(channelToPoll, lastMessageIndex);
 
@@ -304,6 +302,7 @@ namespace PollingClient
                             // Guard against the user switching/leaving channels mid-poll
                             if (currentChannelName == channelToPoll)
                             {
+                                chatShellView.SetMembers(members);
                                 chatShellView.SetSharedFiles(files);
 
                                 foreach (ChatMessage msg in newMessages)

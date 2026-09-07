@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ChatResult;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -6,6 +7,7 @@ using System.Windows.Input;
 
 namespace PollingClient.Views
 {
+    // Class that carries the name and raw bytes of a file selected for sharing.
     public class ShareFileEventArgs : EventArgs
     {
         public string FileName { get; }
@@ -18,8 +20,14 @@ namespace PollingClient.Views
         }
     }
 
+    /*
+     * ChatShellView - Holds channel list (leftside) and conversation panel (rightside)
+     * 
+     */
+
     public partial class ChatShellView : UserControl
     {
+        // FIELDS
         public event EventHandler SignOutRequested;
         public event EventHandler<string> JoinRequested;
         public event EventHandler<string> CreateChannelRequested;
@@ -36,6 +44,7 @@ namespace PollingClient.Views
             InitializeComponent();
         }
 
+        // CONSTRUCTOR
         public void SetChannels(List<string> channels)
         {
             string selected = ChannelListBox.SelectedItem as string;
@@ -52,6 +61,7 @@ namespace PollingClient.Views
             }
         }
 
+        // METHODS
         public void ShowChannelListStatus(string message) => ChannelListStatusTextBlock.Text = message;
 
         public void ClearNewChannelName() => NewChannelNameTextBox.Clear();
@@ -98,12 +108,12 @@ namespace PollingClient.Views
             }
         }
 
-        public void SetSharedFiles(IEnumerable<object> files)
+        public void SetSharedFiles(List<SharedFileInformation> files)
         {
             object selected = SharedFilesListBox.SelectedItem;
 
             SharedFilesListBox.Items.Clear();
-            foreach (object file in files)
+            foreach (SharedFileInformation file in files)
             {
                 SharedFilesListBox.Items.Add(file);
             }
