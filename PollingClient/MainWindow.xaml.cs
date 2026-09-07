@@ -102,6 +102,7 @@ namespace PollingClient
                     if (channelToPoll != null)
                     {
                         List<SharedFileInformation> files = pollingConnection.Service.GetSharedFiles(channelToPoll);
+                        string message = pollingConnection.Service.GetNewestMessage(channelToPoll);
 
                         Dispatcher.Invoke(() =>
                         {
@@ -128,6 +129,7 @@ namespace PollingClient
                                         }
                                     }
                                 }
+                                MessagesListBox.Items.Add(message);
                             }
                         });
                     }

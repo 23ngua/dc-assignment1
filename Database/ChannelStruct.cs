@@ -10,19 +10,19 @@ namespace Database
 {
     internal class ChannelStruct
     {
-        private BlockingCollection<string> newMessages;
+        private string newMessages;
         public ChannelStruct()
         {
-            newMessages = new BlockingCollection<string>();
+            newMessages = "";
         }
         
         public void AddNewMessage(string message)
         {
-            newMessages.Add(message);
+            newMessages = message;
         }
         public string GetNewMessage()
         {
-            return newMessages.Take();
+            return newMessages;
         }
     }
 }
