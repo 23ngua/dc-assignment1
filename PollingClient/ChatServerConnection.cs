@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ServiceModel;
 using ChatServerTier;
-using ChatResults;
 
 /**
  * ChatServerConnection.cs - Creates the WCF connection used by the polling client
@@ -29,13 +28,16 @@ namespace PollingClient
         public ChatServerConnection()
         {
             // Use same TCP binding and security mode as the server
-            var binding = new NetTcpBinding();
+            var tcp = new NetTcpBinding();
+            tcp.MaxReceivedMessageSize = 4 * 1024 * 1024; // 4MB
+            tcp.MaxBufferSize = 4 * 1024 * 1024;
+            tcp.ReaderQuotas.MaxArrayLength = 4 * 1024 * 1024;
 
             // Identify server endpoint that the client will contact
             EndpointAddress endpoint = new EndpointAddress(ServerAddress);
 
             // Create factory that understands shared IChatService contract
-            channelFactory = new ChannelFactory<ChatServerInterface>(binding, endpoint);
+            channelFactory = new ChannelFactory<ChatServerInterface>(tcp, endpoint);
 
             // Create client-side proxy used to call server opertions
             Service = channelFactory.CreateChannel();

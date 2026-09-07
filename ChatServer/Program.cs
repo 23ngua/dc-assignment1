@@ -25,6 +25,11 @@ namespace ChatServer
                 // Use TCP communication between server and clients
                 NetTcpBinding binding = new NetTcpBinding(SecurityMode.None);
 
+                // Override default settings for transmission size
+                binding.MaxReceivedMessageSize = 4 * 1024 * 1024; // 4MB
+                binding.MaxBufferSize = 4 * 1024 * 1024; // 4MB
+                binding.MaxBufferPoolSize = 4 * 1024 * 1024; // 4MB
+
                 // Expose shared IChatService contract using this binding
                 host.AddServiceEndpoint(
                     typeof(IChatService),
