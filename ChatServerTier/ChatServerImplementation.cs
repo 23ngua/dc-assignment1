@@ -217,7 +217,6 @@ namespace ChatServerTier
             Console.WriteLine(temp);
             return temp;
         }
-        */
 
         public ChannelActionResult ShareFile(string userId, string channelName, string fileName, byte[] fileBytes)
         {
@@ -283,7 +282,5 @@ namespace ChatServerTier
 
             return new FileDownloadResult { Success = true, FileName = file.GetFileName(), FileBytes = file.GetFileBytes() };
         }
-
-
     }
 }

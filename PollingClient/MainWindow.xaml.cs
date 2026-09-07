@@ -438,6 +438,7 @@ namespace PollingClient
             }
             ChannelActionResult result = serverConnection.Service.SendMessage(channelName, message);
             MessageTextBox.Clear();
+        }
 
 
         private void ShareFileButton_Click(object sender, RoutedEventArgs e)
