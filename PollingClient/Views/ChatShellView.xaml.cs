@@ -123,9 +123,10 @@ namespace PollingClient.Views
             if (ChannelListBox.SelectedItem == null) return;
 
             string channelName = ChannelListBox.SelectedItem.ToString();
-            if (channelName == joiningChannelName) return;
+            if (channelName == joiningChannelName) return; // Break when already in channel
 
             joiningChannelName = channelName;
+            LeaveRequested?.Invoke(this, EventArgs.Empty);
             JoinRequested?.Invoke(this, channelName);
         }
 

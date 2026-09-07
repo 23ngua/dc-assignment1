@@ -17,6 +17,7 @@ namespace PollingClient
         private ChatServerConnection serverConnection;
         private string currentUserID;
         private string currentChannelName;
+        private volatile int lastMessageIndex = 0; // Tracks message index, so user can only see messages onwards, can be changed by multipe threads
 
         // Poll Settings
         private Thread pollingThread;
@@ -27,7 +28,6 @@ namespace PollingClient
         {
             InitializeComponent();
 
-            // Declare the event handlers to the corresponding method calls
             signInView.SignInRequested += SignInView_SignInRequested;
 
             chatShellView.JoinRequested += ChatShellView_JoinRequested;
@@ -95,6 +95,9 @@ namespace PollingClient
                 if (result.Success)
                 {
                     currentChannelName = channelName;
+                    lastMessageIndex = serverConnection.Service.GetMessageCount(channelName); // Get index for messages onwards
+
+                    chatShellView.ClearConversation();
                     chatShellView.ShowChannelContent(channelName);
                 }
                 else
@@ -140,6 +143,7 @@ namespace PollingClient
                 if (result.Success)
                 {
                     currentChannelName = null;
+                    lastMessageIndex = 0;
                     chatShellView.ClearConversation();
                     chatShellView.HideChannelContent();
                     chatShellView.SetChannels(serverConnection.Service.GetChannelList());
@@ -156,12 +160,22 @@ namespace PollingClient
             }
         }
 
+        /* --- MESSAGES --- */
+
         private void ChatShellView_SendMessageRequested(object sender, string message)
         {
             try
             {
-                serverConnection.Service.SendMessage(currentChannelName, message);
-                chatShellView.ClearMessageBox();
+                ChannelActionResult result = serverConnection.Service.SendMessage(currentUserID, currentChannelName, message);
+
+                if (result.Success)
+                {
+                    chatShellView.ClearMessageBox();
+                }
+                else
+                {
+                    chatShellView.ShowSharedFileStatus(result.Message);
+                }
             }
             catch (CommunicationException)
             {
@@ -214,13 +228,12 @@ namespace PollingClient
             }
         }
 
-        /* --- MESSAGES --- */
-
         private void ChatShellView_SignOutRequested(object sender, EventArgs e)
         {
             SignOut();
             currentChannelName = null;
             currentUserID = null;
+            lastMessageIndex = 0;
 
             chatShellView.ClearConversation();
             chatShellView.HideChannelContent();
@@ -284,20 +297,26 @@ namespace PollingClient
                     if (channelToPoll != null)
                     {
                         List<SharedFileInformation> files = pollingConnection.Service.GetSharedFiles(channelToPoll);
-                        string message = pollingConnection.Service.GetNewestMessage(channelToPoll);
+                        List<ChatMessage> newMessages = pollingConnection.Service.GetMessagesSince(channelToPoll, lastMessageIndex);
 
                         Dispatcher.Invoke(() =>
                         {
+                            // Guard against the user switching/leaving channels mid-poll
                             if (currentChannelName == channelToPoll)
                             {
                                 chatShellView.SetSharedFiles(files);
 
-                                if (!string.IsNullOrEmpty(message))
+                                foreach (ChatMessage msg in newMessages)
                                 {
-                                    chatShellView.AppendMessage(message);
+                                    chatShellView.AppendMessage($"{msg.SenderId}: {msg.Text}");
                                 }
                             }
                         });
+
+                        if (currentChannelName == channelToPoll)
+                        {
+                            lastMessageIndex += newMessages.Count;
+                        }
                     }
                 }
                 catch (CommunicationException)

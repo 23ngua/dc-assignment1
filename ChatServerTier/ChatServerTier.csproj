@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChannelState.cs" />
     <Compile Include="ChatServerInterface.cs" />
     <Compile Include="ChatServerImplementation.cs" />
     <Compile Include="Program.cs" />

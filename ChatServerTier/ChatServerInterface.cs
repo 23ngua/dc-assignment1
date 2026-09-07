@@ -35,13 +35,7 @@ namespace ChatServerTier
         [OperationContract]
         List<string> GetChannelList();
 
-        [OperationContract]
-        ChannelActionResult SendMessage(string channelName, string message);
-
-        [OperationContract]
-        string GetNewestMessage(string channelName);
         /* --- FILE SHARING --- */
-
         [OperationContract]
         ChannelActionResult ShareFile(string userID, string channelName, string fileName, byte[] fileBytes);
 
@@ -50,6 +44,16 @@ namespace ChatServerTier
 
         [OperationContract]
         FileDownloadResult DownloadFile(string userID, Guid fileID);
+
+        /* --- MESSAGING --- */
+        [OperationContract]
+        int GetMessageCount(string channelName);
+
+        [OperationContract]
+        ChannelActionResult SendMessage(string userID, string channelName, string message);
+
+        [OperationContract]
+        List<ChatMessage> GetMessagesSince(string channelName, int sinceIndex);
 
     }
 }
