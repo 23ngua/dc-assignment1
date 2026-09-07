@@ -35,6 +35,9 @@ namespace ChatServerTier
         [OperationContract]
         List<string> GetChannelList();
 
+        [OperationContract]
+        List<string> GetMemberList(string channelName);
+
         /* --- FILE SHARING --- */
         [OperationContract]
         ChannelActionResult ShareFile(string userID, string channelName, string fileName, byte[] fileBytes);

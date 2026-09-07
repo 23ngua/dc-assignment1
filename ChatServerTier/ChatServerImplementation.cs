@@ -282,7 +282,21 @@ namespace ChatServerTier
 
         public List<SharedFileInformation> GetSharedFiles(string channelName)
         {
-            return sharedFiles.GetFilesForChannel(channelName).Select(f => new SharedFileInformation { FileID = f.GetFileID(), FileName = f.GetFileName(), SharedBy = f.GetSharedBy() }).ToList();
+            List<SharedFileInformation> result = new List<SharedFileInformation>();
+
+            var filesForChannel = sharedFiles.GetFilesForChannel(channelName);
+
+            foreach (var file in filesForChannel)
+            {
+                SharedFileInformation info = new SharedFileInformation();
+                info.FileID = file.GetFileID();
+                info.FileName = file.GetFileName();
+                info.SharedBy = file.GetSharedBy();
+
+                result.Add(info);
+            }
+
+            return result;
         }
 
         public FileDownloadResult DownloadFile(string userID, Guid fileID)
@@ -303,13 +317,42 @@ namespace ChatServerTier
             return new FileDownloadResult { Success = true, FileName = file.GetFileName(), FileBytes = file.GetFileBytes() };
         }
 
+        public List<string> GetMemberList(string channelName)
+        {
+            List<string> memberList = new List<string>();
+
+            lock (membershipLock)
+            {
+                foreach (KeyValuePair<string, string> result in userChannels)
+                {
+                    if (result.Value == channelName)
+                    {
+                        memberList.Add(result.Key);
+                    }
+                }
+            }
+
+            return memberList;
+        }
+
         private bool IsMemberOfChannel(string userID, string channelName)
         {
             string cleanUserID = (userID ?? "").Trim();
 
             lock (membershipLock)
             {
-                return userChannels.TryGetValue(cleanUserID, out string actualChannel) && actualChannel == channelName;
+                string actualChannel;
+                bool found = userChannels.TryGetValue(cleanUserID, out actualChannel);
+
+                if (!found) {
+                    return false;
+                }
+
+                if (actualChannel != channelName) {
+                    return false;
+                }
+
+                return true;
             }
         }
     }
