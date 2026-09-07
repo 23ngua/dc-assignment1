@@ -13,23 +13,23 @@ namespace ChatServerTier
     {
         // Attepts to sign in using the supplied user ID
         [OperationContract]
-        SignInResult SignIn(string userId);
+        SignInResult SignIn(string userID);
 
         // Signs out the specified user and releases their user ID
         [OperationContract]
-        ChannelActionResult SignOut(string userId);
+        ChannelActionResult SignOut(string userID);
 
         // Attempt to join the specified user to specified channel
         [OperationContract]
-        ChannelActionResult JoinChannel(string userId, string channelName);
+        ChannelActionResult JoinChannel(string userID, string channelName);
 
         // Removes the specified user from their current channel
         [OperationContract]
-        ChannelActionResult LeaveChannel(string userId);
+        ChannelActionResult LeaveChannel(string userID);
 
         // Attempts to create a new channel with the supplied name
         [OperationContract]
-        ChannelActionResult CreateChannel(string userId, string channelName);
+        ChannelActionResult CreateChannel(string userID, string channelName);
 
         // Returns a list of channel names for UI
         [OperationContract]
@@ -43,13 +43,13 @@ namespace ChatServerTier
         /* --- FILE SHARING --- */
 
         [OperationContract]
-        ChannelActionResult ShareFile(string userId, string channelName, string fileName, byte[] fileBytes);
+        ChannelActionResult ShareFile(string userID, string channelName, string fileName, byte[] fileBytes);
 
         [OperationContract]
         List<SharedFileInformation> GetSharedFiles(string channelName);
 
         [OperationContract]
-        FileDownloadResult DownloadFile(string userId, Guid fileId);
+        FileDownloadResult DownloadFile(string userID, Guid fileID);
 
     }
 }
