@@ -20,6 +20,7 @@ namespace ChatServerTier
         private static HashSet<string> signedInUsers = new HashSet<string>();
         private static Dictionary<string, string> userChannels = new Dictionary<string, string>();
         private static SharedFiles sharedFiles = SharedFiles.Instance;
+        private static PrivateConversations privateConversations = PrivateConversations.Instance;
 
 
         private static readonly object usersLock = new object();    // Protects signedInUsers
@@ -81,6 +82,7 @@ namespace ChatServerTier
             }
         }
 
+        /* -- Channel and Message Methods --- */
         public ChannelActionResult JoinChannel(string userID, string channelName)
         {
             // Reject invalid input
@@ -229,23 +231,10 @@ namespace ChatServerTier
         public List<ChatMessage> GetMessagesSince(string channelName, int sinceIndex)
         {
             List<MessageStruct> sourceMessages = channels.GetMessagesSince(channelName, sinceIndex);
-            List<ChatMessage> result = new List<ChatMessage>();
-
-            // Conversion of list from ChatMessage to MessageStruct
-            foreach (MessageStruct source in sourceMessages)
-            {
-                ChatMessage converted = new ChatMessage();
-                converted.SenderId = source.SenderId;
-                converted.Text = source.Text;
-                converted.Timestamp = source.Timestamp;
-
-                result.Add(converted);
-            }
-
-            return result;
+            return ConvertMessages(sourceMessages);
         }
 
-
+        /* -- File Methods --- */
         public ChannelActionResult ShareFile(string userID, string channelName, string fileName, byte[] fileBytes)
         {
             if (string.IsNullOrWhiteSpace(userID) || string.IsNullOrWhiteSpace(channelName) || fileBytes == null)
@@ -317,24 +306,68 @@ namespace ChatServerTier
             return new FileDownloadResult { Success = true, FileName = file.GetFileName(), FileBytes = file.GetFileBytes() };
         }
 
-        public List<string> GetMemberList(string channelName)
+        /* -- Private Messaging Methods --- */
+        public ChannelActionResult SendPrivateMessage(string senderID, string recieverID, string message)
         {
-            List<string> memberList = new List<string>();
-
-            lock (membershipLock)
+            if (string.IsNullOrWhiteSpace(senderID) || string.IsNullOrWhiteSpace(recieverID) || string.IsNullOrWhiteSpace(message))
             {
-                foreach (KeyValuePair<string, string> result in userChannels)
+                return new ChannelActionResult { Success = false, Message = "Invalid private message request." };
+            }
+
+            string cleanSender = senderID.Trim();
+            string cleanRecipient = recieverID.Trim();
+
+            // check - both users must be signed in
+            lock (usersLock) 
+            {
+                if (!signedInUsers.Contains(cleanSender) || !signedInUsers.Contains(cleanRecipient))
                 {
-                    if (result.Value == channelName)
-                    {
-                        memberList.Add(result.Key);
-                    }
+                    return new ChannelActionResult { Success = false, Message = "Both users must be signed in." };
                 }
             }
 
-            return memberList;
+            // check - must be members of the same channel
+            lock (membershipLock)
+            {
+                string senderChannel;
+                string recipientChannel;
+
+                bool senderFound = userChannels.TryGetValue(cleanSender, out senderChannel);
+                bool recipientFound = userChannels.TryGetValue(cleanRecipient, out recipientChannel);
+
+                if (!senderFound || !recipientFound || senderChannel != recipientChannel)
+                {
+                    return new ChannelActionResult { Success = false, Message = "You must be in the same channel as that user to message them." };
+                }
+            }
+
+            // then add message
+            privateConversations.AddMessage(cleanSender, cleanRecipient, message);
+
+            return new ChannelActionResult { Success = true, Message = "Private message sent." };
         }
 
+        public List<ChatMessage> GetPrivateMessages(string userOneID, string userTwoID)
+        {
+            // send the whole conversation
+            List<MessageStruct> sourceMessages = privateConversations.GetMessagesSince(userOneID, userTwoID, 0);
+            return ConvertMessages(sourceMessages);
+        }
+
+        public List<string> GetPrivateConversationPartners(string userID)
+        {
+            List<String> partners = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(userID))
+            {
+                partners = privateConversations.GetPartners(userID.Trim());
+            }
+
+            return partners;
+        }
+
+
+        /* -- Helper Methods --- */
         private bool IsMemberOfChannel(string userID, string channelName)
         {
             string cleanUserID = (userID ?? "").Trim();
@@ -354,6 +387,38 @@ namespace ChatServerTier
 
                 return true;
             }
+        }
+
+        private static List<ChatMessage> ConvertMessages(List<MessageStruct> sourceMessages)
+        {
+            List<ChatMessage> result = new List<ChatMessage>();
+            foreach (MessageStruct source in sourceMessages)
+            {
+                ChatMessage converted = new ChatMessage();
+                converted.SenderId = source.SenderId;
+                converted.Text = source.Text;
+                converted.Timestamp = source.Timestamp;
+                result.Add(converted);
+            }
+            return result;
+        }
+
+        public List<string> GetMemberList(string channelName)
+        {
+            List<string> memberList = new List<string>();
+
+            lock (membershipLock)
+            {
+                foreach (KeyValuePair<string, string> result in userChannels)
+                {
+                    if (result.Value == channelName)
+                    {
+                        memberList.Add(result.Key);
+                    }
+                }
+            }
+
+            return memberList;
         }
     }
 }

@@ -1,11 +1,12 @@
-﻿using PollingClient.Views;
+﻿using ChatResult;
 using ChatServerTier;
-using ChatResult;
+using PollingClient.Views;
 using System;
 using System.Collections.Generic;
 using System.ServiceModel;
 using System.Threading;
 using System.Windows;
+using System.Windows.Documents;
 
 namespace PollingClient
 {
@@ -13,6 +14,8 @@ namespace PollingClient
     {
         private readonly SignInView signInView = new SignInView();
         private readonly ChatShellView chatShellView = new ChatShellView();
+        private readonly Dictionary<string, PrivateMessageWindow> openPrivateWindows = new Dictionary<string, PrivateMessageWindow>();
+        private readonly Dictionary<string, int> privateMessageSeenCounts = new Dictionary<string, int>();
 
         private ChatServerConnection serverConnection;
         private string currentUserID;
@@ -37,6 +40,7 @@ namespace PollingClient
             chatShellView.ShareFileRequested += ChatShellView_ShareFileRequested;
             chatShellView.DownloadFileRequested += ChatShellView_DownloadFileRequested;
             chatShellView.SignOutRequested += ChatShellView_SignOutRequested;
+            chatShellView.PrivateConversationRequested += ChatShellView_PrivateConversationRequested;
 
             MainContent.Content = signInView;
             Closed += MainWindow_Closed;
@@ -160,7 +164,7 @@ namespace PollingClient
             }
         }
 
-        /* --- MESSAGES --- */
+        /* --- MESSAGES (Inc Private) --- */
 
         private void ChatShellView_SendMessageRequested(object sender, string message)
         {
@@ -181,6 +185,90 @@ namespace PollingClient
             {
                 chatShellView.ShowSharedFileStatus("Communication with the chat server failed.");
             }
+        }
+
+        private void ChatShellView_PrivateConversationRequested(object sender, string partnerUserID)
+        {
+            ShowPrivateWindowFor(partnerUserID);
+        }
+
+        private void ShowPrivateWindowFor(string partnerUserID)
+        {
+            if (partnerUserID == currentUserID)
+            {
+                return;
+            }
+
+            if (openPrivateWindows.ContainsKey(partnerUserID))
+            {
+                openPrivateWindows[partnerUserID].Activate();
+                return;
+            }
+
+            PrivateMessageWindow newWindow = new PrivateMessageWindow(partnerUserID);
+            newWindow.SendPrivateMessageRequested += PrivateWindow_SendPrivateMessageRequested; // add to notification list
+            newWindow.Closed += (s, e) => PrivateWindow_Closed(partnerUserID);//when 'Closed' fires, run lambda. s and e are the sender and event args
+
+            openPrivateWindows.Add(partnerUserID, newWindow);
+
+            RefreshPrivateWindowContent(partnerUserID, newWindow);
+
+            newWindow.Show();
+        }
+
+        private void RefreshPrivateWindowContent(string partnerUserID, PrivateMessageWindow window)
+        {
+            try
+            {
+                List<ChatMessage> fullHistory = serverConnection.Service.GetPrivateMessages(currentUserID, partnerUserID);
+
+                window.SetMessages(fullHistory); // clears and repopulates and scrolls to bottom
+
+                privateMessageSeenCounts[partnerUserID] = fullHistory.Count;
+            }
+            catch (Exception)
+            {
+                // on fail, the next poll try open window
+            }
+        }
+
+        private void PrivateWindow_Closed(string partnerUserID)
+        {
+            openPrivateWindows.Remove(partnerUserID);
+        }
+
+        private void PrivateWindow_SendPrivateMessageRequested(object sender, string message)
+        {
+            PrivateMessageWindow window = sender as PrivateMessageWindow;
+            if (window == null) return;
+
+            try
+            {
+                ChannelActionResult result = serverConnection.Service.SendPrivateMessage(currentUserID, window.PartnerUserID, message);
+
+                if (result.Success)
+                {
+                    window.ClearMessageBox();
+                }
+                else
+                {
+                    window.ShowStatus(result.Message);
+                }
+            }
+            catch (CommunicationException)
+            {
+                window.ShowStatus("Communication with the chat server failed.");
+            }
+        }
+
+        private void CloseAllPrivateWindows()
+        {
+            List<PrivateMessageWindow> windows = new List<PrivateMessageWindow>(openPrivateWindows.Values);
+            foreach (PrivateMessageWindow window in windows)
+            {
+                window.Close();
+            }
+            openPrivateWindows.Clear();
         }
 
         /* --- FILES --- */
@@ -235,6 +323,7 @@ namespace PollingClient
             currentUserID = null;
             lastMessageIndex = 0;
 
+            CloseAllPrivateWindows();
             chatShellView.ClearConversation();
             chatShellView.HideChannelContent();
             MainContent.Content = signInView;
@@ -317,6 +406,40 @@ namespace PollingClient
                             lastMessageIndex += newMessages.Count;
                         }
                     }
+
+                    /* --- PRIVATE MESSAGES --- */
+                    List<string> partners = pollingConnection.Service.GetPrivateConversationPartners(currentUserID);
+
+                    foreach (string partner in partners)
+                    {
+                        bool windowIsOpen = false;
+                        Dispatcher.Invoke(() => { windowIsOpen = openPrivateWindows.ContainsKey(partner); });
+
+                        if (windowIsOpen)
+                        {
+                            // window open = fresh content 
+                            Dispatcher.Invoke(() =>
+                            {
+                                PrivateMessageWindow window = openPrivateWindows[partner];
+                                RefreshPrivateWindowContent(partner, window);
+                            });
+                        }
+                        else
+                        {
+                            // window not open = check if user hasnt seen any messages yet
+                            int alreadySeenCount = 0;
+                            Dispatcher.Invoke(() => { privateMessageSeenCounts.TryGetValue(partner, out alreadySeenCount); });
+
+                            List<ChatMessage> conversation = pollingConnection.Service.GetPrivateMessages(currentUserID, partner);
+                            int actualCount = conversation.Count;
+
+                            if (actualCount > alreadySeenCount)
+                            {
+                                Dispatcher.Invoke(() => ShowPrivateWindowFor(partner));
+                            }
+                        }
+                    }
+
                 }
                 catch (CommunicationException)
                 {

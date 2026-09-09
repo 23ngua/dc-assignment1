@@ -58,5 +58,14 @@ namespace ChatServerTier
         [OperationContract]
         List<ChatMessage> GetMessagesSince(string channelName, int sinceIndex);
 
+        /* --- PRIVATE MESSAGING --- */
+        [OperationContract]
+        ChannelActionResult SendPrivateMessage(string senderID, string recipientID, string message);
+
+        [OperationContract]
+        List<ChatMessage> GetPrivateMessages(string userID, string otherUserID);
+
+        [OperationContract]
+        List<string> GetPrivateConversationPartners(string userID);
     }
 }
