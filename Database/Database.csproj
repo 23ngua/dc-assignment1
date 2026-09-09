@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="ChannelStruct.cs" />
     <Compile Include="Channels.cs" />
+    <Compile Include="PrivateConversations.cs" />
     <Compile Include="SharedFiles.cs" />
     <Compile Include="UserStruct.cs" />
     <Compile Include="MessageStruct.cs" />
