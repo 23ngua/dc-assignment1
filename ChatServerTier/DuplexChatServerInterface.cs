@@ -50,6 +50,17 @@ namespace ChatServerTier
         ChannelActionResult SendMessage(
             string userID,
             string channelName,
-            string message);
+            string message
+        );
+
+        /** PRIVATE MESSAGING */
+        [OperationContract]
+        ChannelActionResult SendPrivateMessage(string senderID, string recipientID, string message);
+
+        [OperationContract]
+        List<ChatMessage> GetPrivateMessages(string userID, string otherUserID);
+
+        [OperationContract]
+        List<string> GetPrivateConversationPartners(string userID);
     }
 }

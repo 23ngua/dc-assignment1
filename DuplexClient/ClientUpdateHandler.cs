@@ -15,6 +15,7 @@ namespace DuplexClient
         public event EventHandler<ChannelMembersUpdatedEventArgs> ChannelMembersUpdatedReceived;
         public event EventHandler<PublicMessageReceivedEventArgs> PublicMessageReceivedReceived;
         public event EventHandler<SharedFilesUpdatedEventArgs> SharedFilesUpdatedReceived;
+        public event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceivedReceived;
 
         public void ChannelListUpdated(List<string> channels)
         {
@@ -34,6 +35,11 @@ namespace DuplexClient
         public void SharedFilesUpdated(string channelName, List<SharedFileInformation> files)
         {
             SharedFilesUpdatedReceived?.Invoke(this, new SharedFilesUpdatedEventArgs(channelName, files));
+        }
+
+        public void PrivateMessageReceived(string senderID, string recipientID, ChatMessage message)
+        {
+            PrivateMessageReceivedReceived?.Invoke(this, new PrivateMessageReceivedEventArgs(senderID, recipientID, message));
         }
     }
 
@@ -70,6 +76,20 @@ namespace DuplexClient
         {
             ChannelName = channelName;
             Files = files;
+        }
+    }
+
+    public class PrivateMessageReceivedEventArgs : EventArgs
+    {
+        public string SenderID { get; }
+        public string RecipientID { get; }
+        public ChatMessage Message { get; }
+
+        public PrivateMessageReceivedEventArgs(string senderID, string recipientID, ChatMessage message)
+        {
+            SenderID = senderID;
+            RecipientID = recipientID;
+            Message = message;
         }
     }
 }

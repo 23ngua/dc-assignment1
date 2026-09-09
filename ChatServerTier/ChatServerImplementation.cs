@@ -459,6 +459,10 @@ namespace ChatServerTier
             // then add message
             privateConversations.AddMessage(cleanSender, cleanRecipient, message);
 
+            ChatMessage newPrivateMessage = new ChatMessage { SenderId = cleanSender, Text = message, Timestamp = DateTime.Now };
+
+            PushPrivateMessage(cleanSender, cleanRecipient, newPrivateMessage);
+
             return new ChannelActionResult { Success = true, Message = "Private message sent." };
         }
 
@@ -520,6 +524,23 @@ namespace ChatServerTier
                 if (!IsMemberOfChannel(client.Key, channelName)) { continue; }
 
                 try { client.Value.PublicMessageReceived(channelName, message); }
+
+                catch (CommunicationException) { /** will clean up dead call backs later */ }
+
+                catch (TimeoutException) { /** will clean up dead call backs later */ }
+            }
+        }
+
+        private void PushPrivateMessage(string senderID, string recipientID, ChatMessage message)
+        {
+            List<KeyValuePair<string, ClientUpdateCallback>> callbacks = GetRegisteredCallbacksSnapshot();
+
+            foreach (KeyValuePair<string, ClientUpdateCallback> client in callbacks)
+            {
+                // Only sender and recipient should receive this PM
+                if (client.Key != senderID && client.Key != recipientID) { continue; }
+
+                try { client.Value.PrivateMessageReceived(senderID, recipientID, message); }
 
                 catch (CommunicationException) { /** will clean up dead call backs later */ }
 
