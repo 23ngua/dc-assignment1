@@ -22,7 +22,8 @@ namespace ChatServerTier
         
         [OperationContract(IsOneWay = true)]
         void SharedFilesUpdated(string channelName, List<SharedFileInformation> files);
-        
-        // Add 'PrivateMessageRecieved(...)' one private-messaging is implemented
+
+        [OperationContract(IsOneWay = true)]
+        void PrivateMessageReceived(string senderID, string recipientID, ChatMessage message);
     }
 }
