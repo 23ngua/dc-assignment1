@@ -7,6 +7,7 @@
     <BuildDependency Project="ChatResult/ChatResult.csproj" />
   </Project>
   <Project Path="Database/Database.csproj" Id="d072db69-1c10-4c6c-a106-be9534f44200" />
+  <Project Path="DuplexClient/DuplexClient.csproj" Id="f0c05ead-a6a8-4c61-ba71-3beb385dc358" />
   <Project Path="PollingClient/PollingClient.csproj" Id="d3059c48-5c9c-4348-8f90-0af1aeeb6838">
     <BuildDependency Project="ChatResult/ChatResult.csproj" />
   </Project>

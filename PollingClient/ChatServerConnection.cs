@@ -15,31 +15,23 @@ namespace PollingClient
 {
     public class ChatServerConnection
     {
-        // Fix WCF address exposed by ChatServer project
         private const string ServerAddress = "net.tcp://localhost:9000/ChatServiceImplementation";
 
-        // Create and manage WCF client channels
         private readonly ChannelFactory<ChatServerInterface> channelFactory;
 
-        // Give client access to server's shared service contract
         public ChatServerInterface Service { get; private set; }
 
-        // Set up WCF connection when this class is created
         public ChatServerConnection()
         {
-            // Use same TCP binding and security mode as the server
             var tcp = new NetTcpBinding();
-            tcp.MaxReceivedMessageSize = 4 * 1024 * 1024; // 4MB
+            tcp.MaxReceivedMessageSize = 4 * 1024 * 1024; 
             tcp.MaxBufferSize = 4 * 1024 * 1024;
             tcp.ReaderQuotas.MaxArrayLength = 4 * 1024 * 1024;
 
-            // Identify server endpoint that the client will contact
             EndpointAddress endpoint = new EndpointAddress(ServerAddress);
 
-            // Create factory that understands shared IChatService contract
             channelFactory = new ChannelFactory<ChatServerInterface>(tcp, endpoint);
 
-            // Create client-side proxy used to call server opertions
             Service = channelFactory.CreateChannel();
         }
     }

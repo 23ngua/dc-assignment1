@@ -14,40 +14,73 @@ namespace ChatServerTier
 {
     [ServiceBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
 
-    internal class ChatServerImplementation : ChatServerInterface
+    internal class ChatServerImplementation : ChatServerInterface, DuplexChatServerInterface
     {
         private static Channels channels = Channels.Instance;
         private static HashSet<string> signedInUsers = new HashSet<string>();
         private static Dictionary<string, string> userChannels = new Dictionary<string, string>();
         private static SharedFiles sharedFiles = SharedFiles.Instance;
+        private static Dictionary<string, ClientUpdateCallback> registeredClientCallbacks = new Dictionary<string, ClientUpdateCallback>();
         private static PrivateConversations privateConversations = PrivateConversations.Instance;
 
 
         private static readonly object usersLock = new object();    // Protects signedInUsers
         private static readonly object membershipLock = new object(); // Protects user-to-channel membership state
         private static readonly object channelsLock = new object(); // Protect the shared channel list
+        private static readonly object callbacksLock = new object();
 
         public SignInResult SignIn(string userID)
         {
             if(!string.IsNullOrWhiteSpace(userID))
             {
                 string cleanUserID = userID.Trim();
+
+                ClientUpdateCallback callback = null;
+
+                try
+                {
+                    callback = OperationContext.Current.GetCallbackChannel<ClientUpdateCallback>();
+                }
+                catch (InvalidOperationException)
+                {
+                    // polling clients don't provide callback channel
+                }
+
                 lock (usersLock)
                 {
-                    // Reject request if this ID is already signed in
                     if (signedInUsers.Contains(cleanUserID))
                     {
-                        return new SignInResult { Success = false, 
-                            Message = "That user ID is already signed in." };
+                        return new SignInResult 
+                        { 
+                            Success = false, 
+                            Message = "That user ID is already signed in." 
+                        };
                     }
-                    // The ID is available, so reserve it for this user
+
                     signedInUsers.Add(cleanUserID);
+
+                    if (callback != null)
+                    {
+                        lock (callbacksLock)
+                        {
+                            registeredClientCallbacks[cleanUserID] = callback;
+                        }
+                    }
                 }
-                return new SignInResult { Success = true, 
-                    Message = "Sign-in successful." };
-            } else {
-                return new SignInResult { Success = false, 
-                    Message = "Please enter a valid username" };
+
+                return new SignInResult 
+                { 
+                    Success = true, 
+                    Message = "Sign-in successful." 
+                };
+            } 
+            else 
+            {
+                return new SignInResult 
+                { 
+                    Success = false, 
+                    Message = "Please enter a valid username" 
+                };
             }
         }
 
@@ -61,24 +94,52 @@ namespace ChatServerTier
                 {
                     if (signedInUsers.Contains(cleanUserID))    // Checks if user is currently signed in
                     {
+                        string previousChannelName = null;
+
                         lock (membershipLock)   // Maybe move outside lock, but stops case where new user takes id before 
                         {
                             if (userChannels.ContainsKey(cleanUserID))
                             {
+                                previousChannelName = userChannels[cleanUserID];
                                 userChannels.Remove(cleanUserID);
                             }
                         }
+
+                        lock (callbacksLock)
+                        {
+                            registeredClientCallbacks.Remove(cleanUserID);
+                        }
+
                         signedInUsers.Remove(cleanUserID);
-                        return new ChannelActionResult { Success = true, 
-                            Message = "Sucsessfully signed Out User" };
-                    } else {
-                        return new ChannelActionResult { Success = false,
-                            Message = "The user is not currently signed in." };
+
+                        if (previousChannelName != null)
+                        {
+                            PushChannelMembersUpdate(previousChannelName);
+                        }
+
+                        return new ChannelActionResult 
+                        { 
+                            Success = true, 
+                            Message = "Successfully Signed Out User" 
+                        };
+                    } 
+                    else 
+                    {
+                        return new ChannelActionResult 
+                        { 
+                            Success = false,
+                            Message = "The user is not currently signed in." 
+                        };
                     }
                 }
-            } else {
-                return new ChannelActionResult { Success = false, 
-                    Message = "Please enter a valid username" };
+            } 
+            else 
+            {
+                return new ChannelActionResult 
+                { 
+                    Success = false, 
+                    Message = "Please enter a valid username" 
+                };
             }
         }
 
@@ -129,6 +190,8 @@ namespace ChatServerTier
                 userChannels.Add(cleanUserID, cleanChannelName);
             }
 
+            PushChannelMembersUpdate(cleanChannelName);
+
             return new ChannelActionResult { Success = true, 
                 Message = "Joined channel successfully." };
         }
@@ -138,7 +201,6 @@ namespace ChatServerTier
         {
             if (!string.IsNullOrWhiteSpace(userID))
             {
-                // Remove accidental spaces around the user ID
                 string cleanUserID = userID.Trim();
 
                 // Make sure user is currently signed in
@@ -151,6 +213,8 @@ namespace ChatServerTier
                     }
                 }
 
+                string previousChannelName = null;
+
                 // Protect shared membership state while changing it
                 lock (membershipLock)
                 {
@@ -161,9 +225,11 @@ namespace ChatServerTier
                             Message = "You are not currently in a channel." };
                     }
 
-                    // Remove the user's channel membership
+                    previousChannelName = userChannels[cleanUserID];
                     userChannels.Remove(cleanUserID);
                 }
+
+                PushChannelMembersUpdate(previousChannelName);
 
                 // Tell the client that leaving succeeded
                 return new ChannelActionResult { Success = true,
@@ -191,14 +257,52 @@ namespace ChatServerTier
             {
                 if (channels.ContainsChannel(cleanChannelName))
                 {
-                    return new ChannelActionResult { Success = false,
-                        Message = "A channel with that name already exists." };
-                } else {
+                    return new ChannelActionResult 
+                    { 
+                        Success = false,
+                        Message = "A channel with that name already exists." 
+                    };
+                } 
+                else 
+                {
                     channels.SetNewChannel(cleanChannelName);
                 }
             }
-            return new ChannelActionResult { Success = true,
-                Message = "Channel created successfully" };
+
+            PushChannelListUpdate();
+
+            return new ChannelActionResult 
+            { 
+                Success = true,
+                Message = "Channel created successfully" 
+            };
+        }
+
+        private void PushChannelMembersUpdate(string channelName)
+        {
+            List<string> members = GetMemberList(channelName);
+            List<KeyValuePair<string, ClientUpdateCallback>> callbacks = GetRegisteredCallbacksSnapshot();
+
+            foreach (KeyValuePair<string, ClientUpdateCallback> client in callbacks)
+            {
+                if (!IsMemberOfChannel(client.Key, channelName))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    client.Value.ChannelMembersUpdated(channelName, members);
+                }
+                catch (CommunicationException)
+                {
+                    // will later clean up dead callbacks
+                }
+                catch (TimeoutException)
+                {
+                    // will later clean up dead callbacks
+                }
+            }
         }
 
         public List<string> GetChannelList()
@@ -219,6 +323,15 @@ namespace ChatServerTier
             }
 
             channels.AddMessage(channelName, userID.Trim(), message); // ADD MESSAGE YIPPEE
+
+            ChatMessage newMessage = new ChatMessage
+            {
+                SenderId = userID.Trim(),
+                Text = message,
+                Timestamp = DateTime.Now
+            };
+
+            PushPublicMessage(channelName, newMessage);
 
             return new ChannelActionResult { Success = true, Message = "Message Sent Successfully" };
         }
@@ -265,6 +378,8 @@ namespace ChatServerTier
             }
 
             sharedFiles.AddFile(new FileStruct(fileName, cleanUserID, channelName, fileBytes));
+
+            PushSharedFilesUpdate(channelName);
 
             return new ChannelActionResult { Success = true, Message = "File shared successfully." };
         }
@@ -366,8 +481,69 @@ namespace ChatServerTier
             return partners;
         }
 
+        private List<KeyValuePair<string, ClientUpdateCallback>> GetRegisteredCallbacksSnapshot()
+        {
+            lock (callbacksLock)
+            {
+                return registeredClientCallbacks.ToList();
+            }
+        }
 
-        /* -- Helper Methods --- */
+        private void PushChannelListUpdate()
+        {
+            List<string> currentChannels = GetChannelList();
+            List<KeyValuePair<string, ClientUpdateCallback>> callbacks = GetRegisteredCallbacksSnapshot();
+
+            foreach (KeyValuePair<string, ClientUpdateCallback> client in callbacks)
+            {
+                try
+                {
+                    client.Value.ChannelListUpdated(currentChannels);
+                }
+                catch (CommunicationException)
+                {
+                    // will later clean up dead callbacks
+                }
+                catch (TimeoutException)
+                {
+                    // will later clean up dead callbacks
+                }
+            }
+        }
+
+        private void PushPublicMessage(string channelName, ChatMessage message)
+        {
+            List<KeyValuePair<string, ClientUpdateCallback>> callbacks = GetRegisteredCallbacksSnapshot();
+
+            foreach (KeyValuePair<string, ClientUpdateCallback> client in callbacks)
+            {
+                if (!IsMemberOfChannel(client.Key, channelName)) { continue; }
+
+                try { client.Value.PublicMessageReceived(channelName, message); }
+
+                catch (CommunicationException) { /** will clean up dead call backs later */ }
+
+                catch (TimeoutException) { /** will clean up dead call backs later */ }
+            }
+        }
+
+        private void PushSharedFilesUpdate(string channelName)
+        {
+            List<SharedFileInformation> files = GetSharedFiles(channelName);
+            List<KeyValuePair<string, ClientUpdateCallback>> callbacks = GetRegisteredCallbacksSnapshot();
+
+            foreach (KeyValuePair<string, ClientUpdateCallback> client in callbacks)
+            {
+                if (!IsMemberOfChannel(client.Key, channelName)) { continue; }
+
+                try { client.Value.SharedFilesUpdated(channelName, files); }
+
+                catch (CommunicationException) { /** will clean up dead call backs later */ }
+
+                catch(TimeoutException) { /** will clean up dead call backs later */ }
+            }
+        }
+
         private bool IsMemberOfChannel(string userID, string channelName)
         {
             string cleanUserID = (userID ?? "").Trim();
