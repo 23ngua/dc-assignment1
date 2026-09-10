@@ -35,6 +35,15 @@ namespace ServerTier
             {
                 string cleanUserID = userID.Trim();
 
+                if(cleanUserID.Length >= 20)
+                {
+                    return new SignInResult
+                    {
+                        Success = false,
+                        Message = "Username entered to long, please choose shorter Name"
+                    };
+                }
+
                 ClientUpdateCallback callback = null;
 
                 try
@@ -272,6 +281,14 @@ namespace ServerTier
             string cleanUserID = userID.Trim();
             string cleanChannelName = channelName.Trim();
 
+            if (cleanChannelName.Length >= 20)
+            {
+                return new ChannelActionResult
+                {
+                    Success = false,
+                    Message = "Channel name entered is to long, please choose shorter name"
+                };
+            }
             lock (channelsLock)
             {
                 if (channels.ContainsChannel(cleanChannelName))
@@ -334,6 +351,11 @@ namespace ServerTier
             if (string.IsNullOrWhiteSpace(userID) || string.IsNullOrWhiteSpace(channelName) || string.IsNullOrWhiteSpace(message))
             {
                 return new ChannelActionResult { Success = false, Message = "Invalid message" };
+            }
+
+            if(message.Length >= 100) 
+            { 
+                return new ChannelActionResult { Success = false, Message = "Message entered is to long" }; 
             }
 
             if (!IsMemberOfChannel(userID, channelName))

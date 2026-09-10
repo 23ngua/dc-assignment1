@@ -62,6 +62,8 @@ namespace DuplexClient.Views
         }
 
         // METHODS
+        public void SetUsernameDisplay(string userID) => SignedInUserLabel.Content = "USER: " + userID;
+        public void ClearUsernameDisplay() => SignedInUserLabel.Content = "";
         public void ShowChannelListStatus(string message) => ChannelListStatusTextBlock.Text = message;
 
         public void ClearNewChannelName() => NewChannelNameTextBox.Clear();

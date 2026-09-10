@@ -67,5 +67,6 @@
                 </DockPanel>
             </Grid>
         </Grid>
+        <Label Grid.Column="1" x:Name="SignedInUserLabel" Content="" HorizontalAlignment="Right" VerticalAlignment="Top" Width="218" Height="30" HorizontalContentAlignment="Right"/>
     </Grid>
 </UserControl>

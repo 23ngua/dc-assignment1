@@ -80,6 +80,7 @@ namespace DuplexClient
                 // Initial state loaded once after sign-in
                 List<string> channels = serverConnection.Service.GetChannelList();
 
+                chatShellView.SetUsernameDisplay(currentUserID);
                 chatShellView.SetChannels(channels);
                 chatShellView.ShowChannelListStatus(channels.Count == 0 ? "No channels currently exist." : "");
 
@@ -395,6 +396,7 @@ namespace DuplexClient
 
                 openPrivateWindows.Clear();
 
+                chatShellView.ClearUsernameDisplay();
                 chatShellView.ClearConversation();
                 chatShellView.HideChannelContent();
 

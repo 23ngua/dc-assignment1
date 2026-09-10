@@ -67,6 +67,7 @@ namespace PollingClient
                 currentUserID = userID.Trim();
 
                 List<string> channels = serverConnection.Service.GetChannelList();
+                chatShellView.SetUsernameDisplay(currentUserID);
                 chatShellView.SetChannels(channels);
                 chatShellView.ShowChannelListStatus(channels.Count == 0 ? "No channels currently exist." : "");
 
@@ -324,6 +325,7 @@ namespace PollingClient
             lastMessageIndex = 0;
 
             CloseAllPrivateWindows();
+            chatShellView.ClearUsernameDisplay();
             chatShellView.ClearConversation();
             chatShellView.HideChannelContent();
             MainContent.Content = signInView;

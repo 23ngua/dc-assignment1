@@ -7,7 +7,7 @@
             <ColumnDefinition Width="200"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        
+
         <!-- Left: channel sidebar -->
         <DockPanel Grid.Column="0" Margin="10">
             <TextBlock DockPanel.Dock="Top" Text="Channels" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
@@ -19,7 +19,7 @@
             </StackPanel>
             <ListBox x:Name="ChannelListBox" SelectionChanged="ChannelListBox_SelectionChanged"/>
         </DockPanel>
-        
+
         <!-- Right: placeholder until a channel is selected -->
         <Grid Grid.Column="1">
             <TextBlock x:Name="PlaceholderText" Text="Select a channel to get started" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
@@ -53,5 +53,6 @@
                 </DockPanel>
             </Grid>
         </Grid>
+        <Label Grid.Column="1" x:Name="SignedInUserLabel" Content="" HorizontalAlignment="Right" VerticalAlignment="Top" Width="218" Height="29" HorizontalContentAlignment="Right"/>
     </Grid>
 </UserControl>
