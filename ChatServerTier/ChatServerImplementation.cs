@@ -45,6 +45,10 @@ namespace ChatServerTier
                 {
                     // polling clients don't provide callback channel
                 }
+                catch (InvalidCastException)
+                {
+                    // polling clients use non-duplex service contract
+                }
 
                 lock (usersLock)
                 {
@@ -64,6 +68,21 @@ namespace ChatServerTier
                         lock (callbacksLock)
                         {
                             registeredClientCallbacks[cleanUserID] = callback;
+                        }
+
+                        ICommunicationObject callbackChannel = callback as ICommunicationObject;
+
+                        if (callbackChannel != null)
+                        {
+                            callbackChannel.Faulted += (sender, e) =>
+                            {
+                                RemoveDisconnectedClient(cleanUserID, callback);
+                            };
+
+                            callbackChannel.Closed += (sender, e) =>
+                            {
+                                RemoveDisconnectedClient(cleanUserID, callback);
+                            };
                         }
                     }
                 }
@@ -296,11 +315,11 @@ namespace ChatServerTier
                 }
                 catch (CommunicationException)
                 {
-                    // will later clean up dead callbacks
+                    RemoveDisconnectedClient(client.Key, client.Value);
                 }
                 catch (TimeoutException)
                 {
-                    // will later clean up dead callbacks
+                    RemoveDisconnectedClient(client.Key, client.Value);
                 }
             }
         }
@@ -506,11 +525,11 @@ namespace ChatServerTier
                 }
                 catch (CommunicationException)
                 {
-                    // will later clean up dead callbacks
+                    RemoveDisconnectedClient(client.Key, client.Value);
                 }
                 catch (TimeoutException)
                 {
-                    // will later clean up dead callbacks
+                    RemoveDisconnectedClient(client.Key, client.Value);
                 }
             }
         }
@@ -525,9 +544,9 @@ namespace ChatServerTier
 
                 try { client.Value.PublicMessageReceived(channelName, message); }
 
-                catch (CommunicationException) { /** will clean up dead call backs later */ }
+                catch (CommunicationException) { RemoveDisconnectedClient(client.Key, client.Value); }
 
-                catch (TimeoutException) { /** will clean up dead call backs later */ }
+                catch (TimeoutException) { RemoveDisconnectedClient(client.Key, client.Value); }
             }
         }
 
@@ -542,9 +561,9 @@ namespace ChatServerTier
 
                 try { client.Value.PrivateMessageReceived(senderID, recipientID, message); }
 
-                catch (CommunicationException) { /** will clean up dead call backs later */ }
+                catch (CommunicationException) { RemoveDisconnectedClient(client.Key, client.Value); }
 
-                catch (TimeoutException) { /** will clean up dead call backs later */ }
+                catch (TimeoutException) { RemoveDisconnectedClient(client.Key, client.Value); }
             }
         }
 
@@ -559,9 +578,46 @@ namespace ChatServerTier
 
                 try { client.Value.SharedFilesUpdated(channelName, files); }
 
-                catch (CommunicationException) { /** will clean up dead call backs later */ }
+                catch (CommunicationException) { RemoveDisconnectedClient(client.Key, client.Value); }
 
-                catch(TimeoutException) { /** will clean up dead call backs later */ }
+                catch(TimeoutException) { RemoveDisconnectedClient(client.Key, client.Value); }
+            }
+        }
+
+        private void RemoveDisconnectedClient(string userID, ClientUpdateCallback callback)
+        {
+            string previousChannelName = null;
+
+            lock (usersLock)
+            {
+                if (!signedInUsers.Contains(userID))
+                {
+                    return;
+                }
+                
+                lock (membershipLock)
+                {
+                    if (userChannels.ContainsKey(userID))
+                    {
+                        previousChannelName = userChannels[userID];
+                        userChannels.Remove(userID);
+                    }
+                }
+
+                lock (callbacksLock)
+                {
+                    if (registeredClientCallbacks.ContainsKey(userID) && registeredClientCallbacks[userID] == callback)
+                    {
+                        registeredClientCallbacks.Remove(userID);
+                    }
+                }
+
+                signedInUsers.Remove(userID);
+            }
+
+            if (previousChannelName != null)
+            {
+                PushChannelMembersUpdate(previousChannelName);
             }
         }
 

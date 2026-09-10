@@ -6,9 +6,12 @@ using System.Threading.Tasks;
 
 using ChatResult;
 using ChatServerTier;
+using System.ServiceModel;
 
 namespace DuplexClient
 {
+    [CallbackBehavior(UseSynchronizationContext = false, ConcurrencyMode = ConcurrencyMode.Multiple)]
+
     public class ClientUpdateHandler : ClientUpdateCallback
     {
         public event EventHandler<List<string>> ChannelListUpdatedReceived;
