@@ -60,8 +60,8 @@
     <Compile Include="Views\PrivateMessageWindow.xaml.cs">
       <DependentUpon>PrivateMessageWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\ChatShellView.xaml.cs">
-      <DependentUpon>ChatShellView.xaml</DependentUpon>
+    <Compile Include="Views\ChannelandChatView.xaml.cs">
+      <DependentUpon>ChannelandChatView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\SignInView.xaml.cs">
       <DependentUpon>SignInView.xaml</DependentUpon>
@@ -74,7 +74,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ChatServerConnection.cs" />
+    <Compile Include="ServerConnection.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -83,7 +83,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Views\ChatShellView.xaml">
+    <Page Include="Views\ChannelandChatView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -119,13 +119,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ChatResult\ChatResult.csproj">
+    <ProjectReference Include="..\ChatResult\DataLibrary.csproj">
       <Project>{a8adf0e9-5fa5-4fb4-8589-a75edc57dda6}</Project>
-      <Name>ChatResult</Name>
+      <Name>DataLibrary</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ChatServerTier\ChatServerTier.csproj">
+    <ProjectReference Include="..\ChatServerTier\ServerTier.csproj">
       <Project>{c51a75b9-2d56-4ca1-baf1-3284af5a0a9d}</Project>
-      <Name>ChatServerTier</Name>
+      <Name>ServerTier</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

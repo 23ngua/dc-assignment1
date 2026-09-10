@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ServiceModel;
-using ChatServerTier;
+using ServerTier;
 
 /**
  * ChatServerConnection.cs - Creates the WCF connection used by the polling client
@@ -13,15 +13,15 @@ using ChatServerTier;
 
 namespace PollingClient
 {
-    public class ChatServerConnection
+    public class ServerConnection
     {
         private const string ServerAddress = "net.tcp://localhost:9000/ChatServiceImplementation";
 
-        private readonly ChannelFactory<ChatServerInterface> channelFactory;
+        private readonly ChannelFactory<ServerInterface> channelFactory;
 
-        public ChatServerInterface Service { get; private set; }
+        public ServerInterface Service { get; private set; }
 
-        public ChatServerConnection()
+        public ServerConnection()
         {
             var tcp = new NetTcpBinding();
             tcp.MaxReceivedMessageSize = 4 * 1024 * 1024; 
@@ -30,7 +30,7 @@ namespace PollingClient
 
             EndpointAddress endpoint = new EndpointAddress(ServerAddress);
 
-            channelFactory = new ChannelFactory<ChatServerInterface>(tcp, endpoint);
+            channelFactory = new ChannelFactory<ServerInterface>(tcp, endpoint);
 
             Service = channelFactory.CreateChannel();
         }

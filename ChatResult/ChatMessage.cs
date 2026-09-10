@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ChatResult
+namespace DataLibrary
 {
     [DataContract]
     public class ChatMessage

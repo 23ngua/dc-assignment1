@@ -1,14 +1,16 @@
 <Solution>
+  <Folder Name="/Clients/">
+    <Project Path="DuplexClient/DuplexClient.csproj" Id="f0c05ead-a6a8-4c61-ba71-3beb385dc358" />
+    <Project Path="PollingClient/PollingClient.csproj" Id="d3059c48-5c9c-4348-8f90-0af1aeeb6838">
+      <BuildDependency Project="ChatResult/DataLibrary.csproj" />
+    </Project>
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
   </Folder>
-  <Project Path="ChatResult/ChatResult.csproj" Id="a8adf0e9-5fa5-4fb4-8589-a75edc57dda6" />
-  <Project Path="ChatServerTier/ChatServerTier.csproj" Id="c51a75b9-2d56-4ca1-baf1-3284af5a0a9d">
-    <BuildDependency Project="ChatResult/ChatResult.csproj" />
+  <Project Path="ChatResult/DataLibrary.csproj" Id="a8adf0e9-5fa5-4fb4-8589-a75edc57dda6" />
+  <Project Path="ChatServerTier/ServerTier.csproj" Id="c51a75b9-2d56-4ca1-baf1-3284af5a0a9d">
+    <BuildDependency Project="ChatResult/DataLibrary.csproj" />
   </Project>
   <Project Path="Database/Database.csproj" Id="d072db69-1c10-4c6c-a106-be9534f44200" />
-  <Project Path="DuplexClient/DuplexClient.csproj" Id="f0c05ead-a6a8-4c61-ba71-3beb385dc358" />
-  <Project Path="PollingClient/PollingClient.csproj" Id="d3059c48-5c9c-4348-8f90-0af1aeeb6838">
-    <BuildDependency Project="ChatResult/ChatResult.csproj" />
-  </Project>
 </Solution>

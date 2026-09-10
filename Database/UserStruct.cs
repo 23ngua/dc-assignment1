@@ -10,16 +10,12 @@ namespace Database
     {
 
         private string UserID;
-        private bool SignedIn;
         // private bool SignedInStatus; (ADD IF NEED)
         
         public UserStruct(string userID)
         {
             UserID = userID;
-            SignedIn = false;
         }
         public string GetName() { return UserID; }
-        public void SignIn() { SignedIn = true; }
-        public void SignOut() { SignedIn = false; }
     }
 }

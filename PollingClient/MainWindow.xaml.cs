@@ -1,5 +1,5 @@
-﻿using ChatResult;
-using ChatServerTier;
+﻿using DataLibrary;
+using ServerTier;
 using PollingClient.Views;
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ namespace PollingClient
         private readonly Dictionary<string, PrivateMessageWindow> openPrivateWindows = new Dictionary<string, PrivateMessageWindow>();
         private readonly Dictionary<string, int> privateMessageSeenCounts = new Dictionary<string, int>();
 
-        private ChatServerConnection serverConnection;
+        private ServerConnection serverConnection;
         private string currentUserID;
         private string currentChannelName;
         private volatile int lastMessageIndex = 0; // Tracks message index, so user can only see messages onwards, can be changed by multipe threads
@@ -53,7 +53,7 @@ namespace PollingClient
             {
                 if (serverConnection == null)
                 {
-                    serverConnection = new ChatServerConnection();
+                    serverConnection = new ServerConnection();
                 }
 
                 SignInResult result = serverConnection.Service.SignIn(userID);
@@ -360,7 +360,7 @@ namespace PollingClient
 
         private void PollingLoop()
         {
-            ChatServerConnection pollingConnection = null;
+            ServerConnection pollingConnection = null;
 
             while (pollingActive)
             {
@@ -368,7 +368,7 @@ namespace PollingClient
                 {
                     if (pollingConnection == null)
                     {
-                        pollingConnection = new ChatServerConnection();
+                        pollingConnection = new ServerConnection();
                     }
 
                     List<string> channels = pollingConnection.Service.GetChannelList();

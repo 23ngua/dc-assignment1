@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ServiceModel;
-using ChatServerTier;
+using ServerTier;
 
 /**
  * Program.cs - Starts and hosts the WCF chat service.
  */
 
-namespace ChatServerTier
+namespace ServerTier
 {
     internal class Program
     {
@@ -22,9 +22,9 @@ namespace ChatServerTier
             tcp.MaxBufferSize = 4 * 1024 * 1024;
             tcp.ReaderQuotas.MaxArrayLength = 4 * 1024 * 1024; 
 
-            var host = new ServiceHost(typeof(ChatServerImplementation));
-            host.AddServiceEndpoint(typeof(ChatServerInterface), tcp, "net.tcp://localhost:9000/ChatServiceImplementation");
-            host.AddServiceEndpoint(typeof(DuplexChatServerInterface), tcp, "net.tcp://localhost:9000/DuplexChatServiceImplementation");
+            var host = new ServiceHost(typeof(ServerImplementation));
+            host.AddServiceEndpoint(typeof(ServerInterface), tcp, "net.tcp://localhost:9000/ChatServiceImplementation");
+            host.AddServiceEndpoint(typeof(DuplexServerInterface), tcp, "net.tcp://localhost:9000/DuplexChatServiceImplementation");
             host.Open();
 
             Console.WriteLine("System Online");

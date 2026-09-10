@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using ChatResult;
+using DataLibrary;
 using System.ServiceModel;
 
-namespace ChatServerTier
+namespace ServerTier
 {
     public interface ClientUpdateCallback
     {

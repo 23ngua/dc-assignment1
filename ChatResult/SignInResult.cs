@@ -9,7 +9,7 @@ using System.Runtime.Serialization;
  *                  - Contains whether operation succeeded and message client can display.
  */
 
-namespace ChatResult
+namespace DataLibrary
 {
     // Represents result returned by server after sign-in attempt
     [DataContract]

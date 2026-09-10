@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using ChatServerTier;
+using ServerTier;
 using System.ServiceModel;
 
 namespace DuplexClient
@@ -13,9 +13,9 @@ namespace DuplexClient
     {
         private const string ServerAddress = "net.tcp://localhost:9000/DuplexChatServiceImplementation";
 
-        private readonly DuplexChannelFactory<DuplexChatServerInterface> duplexChannelFactory;
+        private readonly DuplexChannelFactory<DuplexServerInterface> duplexChannelFactory;
 
-        public DuplexChatServerInterface Service { get; private set; }
+        public DuplexServerInterface Service { get; private set; }
 
         public DuplexServerConnection(ClientUpdateHandler callbackHandler)
         {
@@ -29,7 +29,7 @@ namespace DuplexClient
 
             EndpointAddress endpoint = new EndpointAddress(ServerAddress);
 
-            duplexChannelFactory = new DuplexChannelFactory<DuplexChatServerInterface>(
+            duplexChannelFactory = new DuplexChannelFactory<DuplexServerInterface>(
                 callbackContext,
                 tcp,
                 endpoint);
