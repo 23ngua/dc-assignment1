@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using ChatResult;
-using ChatServerTier;
+using DataLibrary;
+using ServerTier;
 using System.ServiceModel;
 
 namespace DuplexClient

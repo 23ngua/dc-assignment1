@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using ChatResult;
+using DataLibrary;
 using System.ServiceModel;
 
-namespace ChatServerTier
+namespace ServerTier
 {
     [ServiceContract(CallbackContract = typeof(ClientUpdateCallback))]
-    public interface DuplexChatServerInterface
+    public interface DuplexServerInterface
     {
         [OperationContract]
         SignInResult SignIn(string userID);

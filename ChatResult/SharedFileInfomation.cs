@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace ChatResult
+namespace DataLibrary
 {
     [DataContract]
     public class SharedFileInformation

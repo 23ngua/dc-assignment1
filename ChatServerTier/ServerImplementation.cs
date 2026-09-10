@@ -1,4 +1,4 @@
-﻿using ChatResult;
+﻿using DataLibrary;
 using Database;
 using System;
 using System.Collections.Generic;
@@ -10,11 +10,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Schema;
 
-namespace ChatServerTier
+namespace ServerTier
 {
     [ServiceBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
 
-    internal class ChatServerImplementation : ChatServerInterface, DuplexChatServerInterface
+    internal class ServerImplementation : ServerInterface, DuplexServerInterface
     {
         private static Channels channels = Channels.Instance;
         private static HashSet<string> signedInUsers = new HashSet<string>();

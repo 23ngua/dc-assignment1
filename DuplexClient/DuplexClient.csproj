@@ -63,7 +63,7 @@
     <Compile Include="Views\SignInView.xaml.cs">
       <DependentUpon>SignInView.xaml</DependentUpon>
     </Compile>
-    <Page Include="Views\ChatShellView.xaml">
+    <Page Include="Views\ChannelandChatView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -75,8 +75,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Views\ChatShellView.xaml.cs">
-      <DependentUpon>ChatShellView.xaml</DependentUpon>
+    <Compile Include="Views\ChannelandChatView.xaml.cs">
+      <DependentUpon>ChannelandChatView.xaml</DependentUpon>
     </Compile>
     <Compile Include="ClientUpdateHandler.cs" />
     <Compile Include="DuplexServerConnection.cs" />
@@ -120,13 +120,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ChatResult\ChatResult.csproj">
+    <ProjectReference Include="..\ChatResult\DataLibrary.csproj">
       <Project>{a8adf0e9-5fa5-4fb4-8589-a75edc57dda6}</Project>
-      <Name>ChatResult</Name>
+      <Name>DataLibrary</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ChatServerTier\ChatServerTier.csproj">
+    <ProjectReference Include="..\ChatServerTier\ServerTier.csproj">
       <Project>{c51a75b9-2d56-4ca1-baf1-3284af5a0a9d}</Project>
-      <Name>ChatServerTier</Name>
+      <Name>ServerTier</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

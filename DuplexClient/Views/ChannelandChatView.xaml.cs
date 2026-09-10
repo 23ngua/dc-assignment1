@@ -1,11 +1,11 @@
-﻿using ChatResult;
+﻿using DataLibrary;
 using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace PollingClient.Views
+namespace DuplexClient.Views
 {
     // Class that carries the name and raw bytes of a file selected for sharing.
     public class ShareFileEventArgs : EventArgs
@@ -204,7 +204,7 @@ namespace PollingClient.Views
 
         private void SharedFilesListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (SharedFilesListBox.SelectedItem is ChatResult.SharedFileInformation selectedFile)
+            if (SharedFilesListBox.SelectedItem is DataLibrary.SharedFileInformation selectedFile)
             {
                 DownloadFileRequested?.Invoke(this, selectedFile.FileID);
             }

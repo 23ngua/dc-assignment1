@@ -1,4 +1,4 @@
-﻿using ChatResult;
+﻿using DataLibrary;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,10 +6,10 @@ using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ChatServerTier
+namespace ServerTier
 {
     [ServiceContract]
-    public interface ChatServerInterface
+    public interface ServerInterface
     {
         // Attepts to sign in using the supplied user ID
         [OperationContract]
