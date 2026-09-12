@@ -25,7 +25,7 @@ namespace DuplexClient
     public partial class MainWindow : Window
     {
         private readonly SignInView signInView = new SignInView();
-        private readonly ChatShellView chatShellView = new ChatShellView();
+        private readonly ChannelAndChatView channelAndChatView = new ChannelAndChatView();
         private readonly ClientUpdateHandler callbackHandler = new ClientUpdateHandler();
         private readonly Dictionary<string, PrivateMessageWindow> openPrivateWindows = new Dictionary<string, PrivateMessageWindow>();
         private DuplexServerConnection serverConnection;
@@ -38,14 +38,14 @@ namespace DuplexClient
 
             signInView.SignInRequested += SignInView_SignInRequested;
 
-            chatShellView.JoinRequested += ChatShellView_JoinRequested;
-            chatShellView.CreateChannelRequested += ChatShellView_CreateChannelRequested;
-            chatShellView.LeaveRequested += ChatShellView_LeaveRequested;
-            chatShellView.SendMessageRequested += ChatShellView_SendMessageRequested;
-            chatShellView.ShareFileRequested += ChatShellView_ShareFileRequested;
-            chatShellView.DownloadFileRequested += ChatShellView_DownloadFileRequested;
-            chatShellView.SignOutRequested += ChatShellView_SignOutRequested;
-            chatShellView.PrivateConversationRequested += ChatShellView_PrivateConversationRequested;
+            channelAndChatView.JoinRequested += ChannelAndChatView_JoinRequested;
+            channelAndChatView.CreateChannelRequested += ChannelAndChatView_CreateChannelRequested;
+            channelAndChatView.LeaveRequested += ChannelAndChatView_LeaveRequested;
+            channelAndChatView.SendMessageRequested += ChannelAndChatView_SendMessageRequested;
+            channelAndChatView.ShareFileRequested += ChannelAndChatView_ShareFileRequested;
+            channelAndChatView.DownloadFileRequested += ChannelAndChatView_DownloadFileRequested;
+            channelAndChatView.SignOutRequested += ChannelAndChatView_SignOutRequested;
+            channelAndChatView.PrivateConversationRequested += ChannelAndChatView_PrivateConversationRequested;
 
             callbackHandler.ChannelListUpdatedReceived += CallbackHandler_ChannelListUpdatedReceived;
             callbackHandler.ChannelMembersUpdatedReceived += CallbackHandler_ChannelMembersUpdatedReceived;
@@ -77,13 +77,15 @@ namespace DuplexClient
 
                 currentUserID = userID.Trim();
 
+                channelAndChatView.SetCurrentUser(currentUserID);
+
                 // Initial state loaded once after sign-in
                 List<string> channels = serverConnection.Service.GetChannelList();
 
-                chatShellView.SetChannels(channels);
-                chatShellView.ShowChannelListStatus(channels.Count == 0 ? "No channels currently exist." : "");
+                channelAndChatView.SetChannels(channels);
+                channelAndChatView.ShowChannelListStatus(channels.Count == 0 ? "No channels currently exist." : "");
 
-                MainContent.Content = chatShellView;
+                MainContent.Content = channelAndChatView;
             }
             catch (EndpointNotFoundException)
             {
@@ -103,9 +105,9 @@ namespace DuplexClient
         {
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                chatShellView.SetChannels(channels);
+                channelAndChatView.SetChannels(channels);
 
-                chatShellView.ShowChannelListStatus(channels.Count == 0 ? "No channels currently exist." : "");
+                channelAndChatView.ShowChannelListStatus(channels.Count == 0 ? "No channels currently exist." : "");
             }));
         }
 
@@ -115,7 +117,7 @@ namespace DuplexClient
             {
                 if (currentChannelName == e.ChannelName)
                 {
-                    chatShellView.SetMembers(e.Members);
+                    channelAndChatView.SetMembers(e.Members);
                 }
             }));
         }
@@ -126,7 +128,7 @@ namespace DuplexClient
             {
                 if (currentChannelName == e.ChannelName)
                 {
-                    chatShellView.AppendMessage($"{e.Message.SenderId}: {e.Message.Text}");
+                    channelAndChatView.AppendMessage($"{e.Message.SenderId}: {e.Message.Text}");
                 }
             }));
         }
@@ -137,7 +139,7 @@ namespace DuplexClient
             {
                 if (currentChannelName == e.ChannelName)
                 {
-                    chatShellView.SetSharedFiles(e.Files);
+                    channelAndChatView.SetSharedFiles(e.Files);
                 }
             }));
         }
@@ -150,7 +152,7 @@ namespace DuplexClient
 
                 if (!openPrivateWindows.ContainsKey(partnerUserID))
                 {
-                    ChatShellView_PrivateConversationRequested(this, partnerUserID);
+                    ChannelAndChatView_PrivateConversationRequested(this, partnerUserID);
                     return;
                 }
 
@@ -162,7 +164,7 @@ namespace DuplexClient
             }));
         }
 
-        private void ChatShellView_PrivateConversationRequested(object sender, string partnerUserID)
+        private void ChannelAndChatView_PrivateConversationRequested(object sender, string partnerUserID)
         {
             if (string.IsNullOrWhiteSpace(partnerUserID)) { return; }
 
@@ -214,7 +216,7 @@ namespace DuplexClient
             }
         }
 
-        private void ChatShellView_JoinRequested(object sender, string channelName)
+        private void ChannelAndChatView_JoinRequested(object sender, string channelName)
         {
             try
             {
@@ -222,36 +224,36 @@ namespace DuplexClient
 
                 if (!result.Success)
                 {
-                    chatShellView.ShowChannelListStatus(result.Message);
+                    channelAndChatView.ShowChannelListStatus(result.Message);
                     return;
                 }
 
                 currentChannelName = channelName;
 
-                chatShellView.ClearConversation();
-                chatShellView.ShowChannelContent(channelName);
+                channelAndChatView.ClearConversation();
+                channelAndChatView.ShowChannelContent(channelName);
 
                 // Load initial state once after joining
                 List<string> members = serverConnection.Service.GetMemberList(channelName);
 
                 List<SharedFileInformation> files = serverConnection.Service.GetSharedFiles(channelName);
 
-                chatShellView.SetMembers(members);
-                chatShellView.SetSharedFiles(files);
+                channelAndChatView.SetMembers(members);
+                channelAndChatView.SetSharedFiles(files);
 
-                chatShellView.ShowChannelListStatus(result.Message);
+                channelAndChatView.ShowChannelListStatus(result.Message);
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowChannelListStatus("Communication with the chat server failed.");
+                channelAndChatView.ShowChannelListStatus("Communication with the chat server failed.");
             }
             catch (Exception)
             {
-                chatShellView.ShowChannelListStatus("An unexpected error occurred while joining the channel.");
+                channelAndChatView.ShowChannelListStatus("An unexpected error occurred while joining the channel.");
             }
         }
 
-        private void ChatShellView_LeaveRequested(object sender, EventArgs e)
+        private void ChannelAndChatView_LeaveRequested(object sender, EventArgs e)
         {
             try
             {
@@ -259,53 +261,53 @@ namespace DuplexClient
 
                 if (!result.Success)
                 {
-                    chatShellView.ShowChannelListStatus(result.Message);
+                    channelAndChatView.ShowChannelListStatus(result.Message);
                     return;
                 }
 
                 currentChannelName = null;
 
-                chatShellView.ClearConversation();
-                chatShellView.HideChannelContent();
-                chatShellView.SetMembers(new List<string>());
-                chatShellView.SetSharedFiles(new List<SharedFileInformation>());
+                channelAndChatView.ClearConversation();
+                channelAndChatView.HideChannelContent();
+                channelAndChatView.SetMembers(new List<string>());
+                channelAndChatView.SetSharedFiles(new List<SharedFileInformation>());
 
-                chatShellView.ShowChannelListStatus(result.Message);
+                channelAndChatView.ShowChannelListStatus(result.Message);
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowChannelListStatus("Communication with the chat server failed.");
+                channelAndChatView.ShowChannelListStatus("Communication with the chat server failed.");
             }
             catch (Exception)
             {
-                chatShellView.ShowChannelListStatus("An unexpected error occurred while leaving the channel.");
+                channelAndChatView.ShowChannelListStatus("An unexpected error occurred while leaving the channel.");
             }
         }
 
-        private void ChatShellView_CreateChannelRequested(object sender, string channelName)
+        private void ChannelAndChatView_CreateChannelRequested(object sender, string channelName)
         {
             try
             {
                 ChannelActionResult result = serverConnection.Service.CreateChannel(currentUserID, channelName);
 
-                chatShellView.ShowChannelListStatus(result.Message);
+                channelAndChatView.ShowChannelListStatus(result.Message);
 
                 if (result.Success)
                 {
-                    chatShellView.ClearNewChannelName();
+                    channelAndChatView.ClearNewChannelName();
                 }
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowChannelListStatus("Communication with the chat server failed.");
+                channelAndChatView.ShowChannelListStatus("Communication with the chat server failed.");
             }
             catch (Exception)
             {
-                chatShellView.ShowChannelListStatus("An unexpected error occurred while creating the channel.");
+                channelAndChatView.ShowChannelListStatus("An unexpected error occurred while creating the channel.");
             }
         }
 
-        private void ChatShellView_SendMessageRequested(object sender, string message)
+        private void ChannelAndChatView_SendMessageRequested(object sender, string message)
         {
             try
             {
@@ -313,42 +315,42 @@ namespace DuplexClient
 
                 if (!result.Success)
                 {
-                    chatShellView.ShowChannelListStatus(result.Message);
+                    channelAndChatView.ShowChannelListStatus(result.Message);
                     return;
                 }
 
-                chatShellView.ClearMessageBox();
-                chatShellView.ShowChannelListStatus("");
+                channelAndChatView.ClearMessageBox();
+                channelAndChatView.ShowChannelListStatus("");
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowChannelListStatus("Communication with the chat server failed.");
+                channelAndChatView.ShowChannelListStatus("Communication with the chat server failed.");
             }
             catch (Exception)
             {
-                chatShellView.ShowChannelListStatus("An unexpected error occurred while sending the message.");
+                channelAndChatView.ShowChannelListStatus("An unexpected error occurred while sending the message.");
             }
         }
 
-        private void ChatShellView_ShareFileRequested(object sender, ShareFileEventArgs e)
+        private void ChannelAndChatView_ShareFileRequested(object sender, ShareFileEventArgs e)
         {
             try
             {
                 ChannelActionResult result = serverConnection.Service.ShareFile(currentUserID, currentChannelName, e.FileName, e.FileBytes);
 
-                chatShellView.ShowSharedFileStatus(result.Message);
+                channelAndChatView.ShowSharedFileStatus(result.Message);
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowSharedFileStatus("Communication with the chat server failed.");
+                channelAndChatView.ShowSharedFileStatus("Communication with the chat server failed.");
             }
             catch (Exception)
             {
-                chatShellView.ShowSharedFileStatus("An unexpected error occurred while sharing the file.");
+                channelAndChatView.ShowSharedFileStatus("An unexpected error occurred while sharing the file.");
             }
         }
 
-        private void ChatShellView_DownloadFileRequested(object sender, Guid fileID)
+        private void ChannelAndChatView_DownloadFileRequested(object sender, Guid fileID)
         {
             try
             {
@@ -356,7 +358,7 @@ namespace DuplexClient
 
                 if (!result.Success)
                 {
-                    chatShellView.ShowSharedFileStatus(result.Message);
+                    channelAndChatView.ShowSharedFileStatus(result.Message);
                     return;
                 }
 
@@ -368,15 +370,15 @@ namespace DuplexClient
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowSharedFileStatus("Communication with the chat server failed.");
+                channelAndChatView.ShowSharedFileStatus("Communication with the chat server failed.");
             }
             catch (Exception)
             {
-                chatShellView.ShowSharedFileStatus("An unexpected error occurred while opening the file.");
+                channelAndChatView.ShowSharedFileStatus("An unexpected error occurred while opening the file.");
             }
         }
 
-        private void ChatShellView_SignOutRequested(object sender, EventArgs e)
+        private void ChannelAndChatView_SignOutRequested(object sender, EventArgs e)
         {
             try
             {
@@ -399,8 +401,8 @@ namespace DuplexClient
 
                 openPrivateWindows.Clear();
 
-                chatShellView.ClearConversation();
-                chatShellView.HideChannelContent();
+                channelAndChatView.ClearConversation();
+                channelAndChatView.HideChannelContent();
 
                 MainContent.Content = signInView;
             }

@@ -63,7 +63,7 @@
     <Compile Include="Views\SignInView.xaml.cs">
       <DependentUpon>SignInView.xaml</DependentUpon>
     </Compile>
-    <Page Include="Views\ChannelandChatView.xaml">
+    <Page Include="Views\ChannelAndChatView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -75,8 +75,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Views\ChannelandChatView.xaml.cs">
-      <DependentUpon>ChannelandChatView.xaml</DependentUpon>
+    <Compile Include="Views\ChannelAndChatView.xaml.cs">
+      <DependentUpon>ChannelAndChatView.xaml</DependentUpon>
     </Compile>
     <Compile Include="ClientUpdateHandler.cs" />
     <Compile Include="DuplexServerConnection.cs" />

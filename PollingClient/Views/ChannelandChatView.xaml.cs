@@ -21,11 +21,11 @@ namespace PollingClient.Views
     }
 
     /*
-     * ChatShellView - Holds channel list (leftside) and conversation panel (rightside)
+     * ChannelAndChatView - Holds channel list (leftside) and conversation panel (rightside)
      * 
      */
 
-    public partial class ChatShellView : UserControl
+    public partial class ChannelAndChatView : UserControl
     {
         // FIELDS
         public event EventHandler SignOutRequested;
@@ -39,7 +39,7 @@ namespace PollingClient.Views
 
         private string joiningChannelName;
 
-        public ChatShellView()
+        public ChannelAndChatView()
         {
             InitializeComponent();
         }
@@ -216,6 +216,10 @@ namespace PollingClient.Views
             {
                 PrivateConversationRequested?.Invoke(this, member);
             }
+        }
+        public void SetCurrentUser(string userID)
+        {
+            CurrentUserTextBlock.Text = "User: " + userID;
         }
     }
 }

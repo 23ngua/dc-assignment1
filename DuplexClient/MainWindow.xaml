@@ -1,7 +1,7 @@
 ﻿<Window x:Class="DuplexClient.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="DC2 Chat" Height="560" Width="860">
+        Title="DC2 Chat - Duplex Client" Height="560" Width="860">
     <Grid>
         <ContentControl x:Name="MainContent"/>
     </Grid>

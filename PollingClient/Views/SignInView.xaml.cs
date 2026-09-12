@@ -22,5 +22,12 @@ namespace PollingClient.Views
         {
             SignInRequested?.Invoke(this, UserIDTextBox.Text);
         }
+        private void UserIDTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (UserIDTextBox.Text == "Enter your UserID")
+            {
+                UserIDTextBox.Clear();
+            }
+        }
     }
 }

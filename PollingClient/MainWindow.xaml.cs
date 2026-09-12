@@ -13,7 +13,7 @@ namespace PollingClient
     public partial class MainWindow : Window
     {
         private readonly SignInView signInView = new SignInView();
-        private readonly ChatShellView chatShellView = new ChatShellView();
+        private readonly ChannelAndChatView channelAndChatView = new ChannelAndChatView();
         private readonly Dictionary<string, PrivateMessageWindow> openPrivateWindows = new Dictionary<string, PrivateMessageWindow>();
         private readonly Dictionary<string, int> privateMessageSeenCounts = new Dictionary<string, int>();
 
@@ -25,7 +25,7 @@ namespace PollingClient
         // Poll Settings
         private Thread pollingThread;
         private volatile bool pollingActive;
-        private const int PollingInterval = 1000;
+        private const int PollingInterval = 300;
 
         public MainWindow()
         {
@@ -33,14 +33,14 @@ namespace PollingClient
 
             signInView.SignInRequested += SignInView_SignInRequested;
 
-            chatShellView.JoinRequested += ChatShellView_JoinRequested;
-            chatShellView.CreateChannelRequested += ChatShellView_CreateChannelRequested;
-            chatShellView.LeaveRequested += ChatShellView_LeaveRequested;
-            chatShellView.SendMessageRequested += ChatShellView_SendMessageRequested;
-            chatShellView.ShareFileRequested += ChatShellView_ShareFileRequested;
-            chatShellView.DownloadFileRequested += ChatShellView_DownloadFileRequested;
-            chatShellView.SignOutRequested += ChatShellView_SignOutRequested;
-            chatShellView.PrivateConversationRequested += ChatShellView_PrivateConversationRequested;
+            channelAndChatView.JoinRequested += ChannelAndChatView_JoinRequested;
+            channelAndChatView.CreateChannelRequested += ChannelAndChatView_CreateChannelRequested;
+            channelAndChatView.LeaveRequested += ChannelAndChatView_LeaveRequested;
+            channelAndChatView.SendMessageRequested += ChannelAndChatView_SendMessageRequested;
+            channelAndChatView.ShareFileRequested += ChannelAndChatView_ShareFileRequested;
+            channelAndChatView.DownloadFileRequested += ChannelAndChatView_DownloadFileRequested;
+            channelAndChatView.SignOutRequested += ChannelAndChatView_SignOutRequested;
+            channelAndChatView.PrivateConversationRequested += ChannelAndChatView_PrivateConversationRequested;
 
             MainContent.Content = signInView;
             Closed += MainWindow_Closed;
@@ -65,12 +65,13 @@ namespace PollingClient
                 }
 
                 currentUserID = userID.Trim();
+                channelAndChatView.SetCurrentUser(currentUserID);
 
                 List<string> channels = serverConnection.Service.GetChannelList();
-                chatShellView.SetChannels(channels);
-                chatShellView.ShowChannelListStatus(channels.Count == 0 ? "No channels currently exist." : "");
+                channelAndChatView.SetChannels(channels);
+                channelAndChatView.ShowChannelListStatus(channels.Count == 0 ? "No channels currently exist." : "");
 
-                MainContent.Content = chatShellView;
+                MainContent.Content = channelAndChatView;
                 StartPolling();
             }
             catch (EndpointNotFoundException)
@@ -89,56 +90,56 @@ namespace PollingClient
 
         /* --- CHANNELS --- */
 
-        private void ChatShellView_JoinRequested(object sender, string channelName)
+        private void ChannelAndChatView_JoinRequested(object sender, string channelName)
         {
             try
             {
                 ChannelActionResult result = serverConnection.Service.JoinChannel(currentUserID, channelName);
-                chatShellView.ShowChannelListStatus(result.Message);
+                channelAndChatView.ShowChannelListStatus(result.Message);
 
                 if (result.Success)
                 {
                     currentChannelName = channelName;
                     lastMessageIndex = serverConnection.Service.GetMessageCount(channelName); // Get index for messages onwards
 
-                    chatShellView.ClearConversation();
-                    chatShellView.ShowChannelContent(channelName);
+                    channelAndChatView.ClearConversation();
+                    channelAndChatView.ShowChannelContent(channelName);
                 }
                 else
                 {
-                    chatShellView.HideChannelContent();
+                    channelAndChatView.HideChannelContent();
                 }
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowChannelListStatus("An unexpected error occurred while joining the channel.");
+                channelAndChatView.ShowChannelListStatus("An unexpected error occurred while joining the channel.");
             }
         }
 
-        private void ChatShellView_CreateChannelRequested(object sender, string channelName)
+        private void ChannelAndChatView_CreateChannelRequested(object sender, string channelName)
         {
             try
             {
                 ChannelActionResult result = serverConnection.Service.CreateChannel(currentUserID, channelName);
-                chatShellView.ShowChannelListStatus(result.Message);
+                channelAndChatView.ShowChannelListStatus(result.Message);
 
                 if (result.Success)
                 {
-                    chatShellView.ClearNewChannelName();
-                    chatShellView.SetChannels(serverConnection.Service.GetChannelList());
+                    channelAndChatView.ClearNewChannelName();
+                    channelAndChatView.SetChannels(serverConnection.Service.GetChannelList());
                 }
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowChannelListStatus("Communication with the chat server failed.");
+                channelAndChatView.ShowChannelListStatus("Communication with the chat server failed.");
             }
             catch (Exception)
             {
-                chatShellView.ShowChannelListStatus("An unexpected error occurred while creating the channel.");
+                channelAndChatView.ShowChannelListStatus("An unexpected error occurred while creating the channel.");
             }
         }
 
-        private void ChatShellView_LeaveRequested(object sender, EventArgs e)
+        private void ChannelAndChatView_LeaveRequested(object sender, EventArgs e)
         {
             try
             {
@@ -148,25 +149,25 @@ namespace PollingClient
                 {
                     currentChannelName = null;
                     lastMessageIndex = 0;
-                    chatShellView.ClearConversation();
-                    chatShellView.HideChannelContent();
-                    chatShellView.SetChannels(serverConnection.Service.GetChannelList());
-                    chatShellView.ShowChannelListStatus(result.Message);
+                    channelAndChatView.ClearConversation();
+                    channelAndChatView.HideChannelContent();
+                    channelAndChatView.SetChannels(serverConnection.Service.GetChannelList());
+                    channelAndChatView.ShowChannelListStatus(result.Message);
                 }
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowChannelListStatus("Communication with the chat server failed.");
+                channelAndChatView.ShowChannelListStatus("Communication with the chat server failed.");
             }
             catch (Exception)
             {
-                chatShellView.ShowChannelListStatus("An unexpected error occurred while leaving the channel.");
+                channelAndChatView.ShowChannelListStatus("An unexpected error occurred while leaving the channel.");
             }
         }
 
         /* --- MESSAGES (Inc Private) --- */
 
-        private void ChatShellView_SendMessageRequested(object sender, string message)
+        private void ChannelAndChatView_SendMessageRequested(object sender, string message)
         {
             try
             {
@@ -174,20 +175,20 @@ namespace PollingClient
 
                 if (result.Success)
                 {
-                    chatShellView.ClearMessageBox();
+                    channelAndChatView.ClearMessageBox();
                 }
                 else
                 {
-                    chatShellView.ShowSharedFileStatus(result.Message);
+                    channelAndChatView.ShowSharedFileStatus(result.Message);
                 }
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowSharedFileStatus("Communication with the chat server failed.");
+                channelAndChatView.ShowSharedFileStatus("Communication with the chat server failed.");
             }
         }
 
-        private void ChatShellView_PrivateConversationRequested(object sender, string partnerUserID)
+        private void ChannelAndChatView_PrivateConversationRequested(object sender, string partnerUserID)
         {
             ShowPrivateWindowFor(partnerUserID);
         }
@@ -273,24 +274,24 @@ namespace PollingClient
 
         /* --- FILES --- */
 
-        private void ChatShellView_ShareFileRequested(object sender, ShareFileEventArgs e)
+        private void ChannelAndChatView_ShareFileRequested(object sender, ShareFileEventArgs e)
         {
             try
             {
                 ChannelActionResult result = serverConnection.Service.ShareFile(currentUserID, currentChannelName, e.FileName, e.FileBytes);
-                chatShellView.ShowSharedFileStatus(result.Message);
+                channelAndChatView.ShowSharedFileStatus(result.Message);
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowSharedFileStatus("Communication with the chat server failed.");
+                channelAndChatView.ShowSharedFileStatus("Communication with the chat server failed.");
             }
             catch (Exception)
             {
-                chatShellView.ShowSharedFileStatus("An unexpected error occurred while sharing the file.");
+                channelAndChatView.ShowSharedFileStatus("An unexpected error occurred while sharing the file.");
             }
         }
 
-        private void ChatShellView_DownloadFileRequested(object sender, Guid fileID)
+        private void ChannelAndChatView_DownloadFileRequested(object sender, Guid fileID)
         {
             try
             {
@@ -298,7 +299,7 @@ namespace PollingClient
 
                 if (!result.Success)
                 {
-                    chatShellView.ShowSharedFileStatus(result.Message);
+                    channelAndChatView.ShowSharedFileStatus(result.Message);
                     return;
                 }
 
@@ -308,15 +309,15 @@ namespace PollingClient
             }
             catch (CommunicationException)
             {
-                chatShellView.ShowSharedFileStatus("Communication with the chat server failed.");
+                channelAndChatView.ShowSharedFileStatus("Communication with the chat server failed.");
             }
             catch (Exception)
             {
-                chatShellView.ShowSharedFileStatus("An unexpected error occurred while opening the file.");
+                channelAndChatView.ShowSharedFileStatus("An unexpected error occurred while opening the file.");
             }
         }
 
-        private void ChatShellView_SignOutRequested(object sender, EventArgs e)
+        private void ChannelAndChatView_SignOutRequested(object sender, EventArgs e)
         {
             SignOut();
             currentChannelName = null;
@@ -324,8 +325,8 @@ namespace PollingClient
             lastMessageIndex = 0;
 
             CloseAllPrivateWindows();
-            chatShellView.ClearConversation();
-            chatShellView.HideChannelContent();
+            channelAndChatView.ClearConversation();
+            channelAndChatView.HideChannelContent();
             MainContent.Content = signInView;
         }
 
@@ -375,7 +376,7 @@ namespace PollingClient
 
                     Dispatcher.Invoke(() =>
                     {
-                            chatShellView.SetChannels(channels); // Always update channel list 
+                            channelAndChatView.SetChannels(channels); // Always update channel list 
                     });
 
                     string channelToPoll = currentChannelName;
@@ -391,12 +392,12 @@ namespace PollingClient
                             // Guard against the user switching/leaving channels mid-poll
                             if (currentChannelName == channelToPoll)
                             {
-                                chatShellView.SetMembers(members);
-                                chatShellView.SetSharedFiles(files);
+                                channelAndChatView.SetMembers(members);
+                                channelAndChatView.SetSharedFiles(files);
 
                                 foreach (ChatMessage msg in newMessages)
                                 {
-                                    chatShellView.AppendMessage($"{msg.SenderId}: {msg.Text}");
+                                    channelAndChatView.AppendMessage($"{msg.SenderId}: {msg.Text}");
                                 }
                             }
                         });
