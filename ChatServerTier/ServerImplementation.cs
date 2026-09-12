@@ -2,13 +2,9 @@
 using Database;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.ServiceModel;
-using System.ServiceModel.Channels;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Schema;
+
 
 namespace ServerTier
 {
@@ -52,6 +48,15 @@ namespace ServerTier
 
                 lock (usersLock)
                 {
+                    if (cleanUserID.Length >= 20)
+                    {
+                        return new SignInResult
+                        {
+                            Success = false,
+                            Message = "Username entered to long, please choose shorter Name"
+                        };
+                    }
+
                     if (signedInUsers.Contains(cleanUserID))
                     {
                         return new SignInResult 
@@ -272,6 +277,15 @@ namespace ServerTier
             string cleanUserID = userID.Trim();
             string cleanChannelName = channelName.Trim();
 
+            if (cleanChannelName.Length >= 20)
+            {
+                return new ChannelActionResult
+                {
+                    Success = false,
+                    Message = "Channel name entered is to long, please choose shorter name"
+                };
+            }
+
             lock (channelsLock)
             {
                 if (channels.ContainsChannel(cleanChannelName))
@@ -334,6 +348,11 @@ namespace ServerTier
             if (string.IsNullOrWhiteSpace(userID) || string.IsNullOrWhiteSpace(channelName) || string.IsNullOrWhiteSpace(message))
             {
                 return new ChannelActionResult { Success = false, Message = "Invalid message" };
+            }
+
+            if (message.Length >= 100)
+            {
+                return new ChannelActionResult { Success = false, Message = "Message entered is to long" };
             }
 
             if (!IsMemberOfChannel(userID, channelName))
