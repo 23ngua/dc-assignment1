@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 
 /** SignInResult.cs - A shared WCF data object returned by server after sign-in request.
  *                  - Contains whether operation succeeded and message client can display.

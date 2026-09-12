@@ -1,12 +1,10 @@
 ﻿using DataLibrary;
-using ServerTier;
 using PollingClient.Views;
 using System;
 using System.Collections.Generic;
 using System.ServiceModel;
 using System.Threading;
 using System.Windows;
-using System.Windows.Documents;
 
 namespace PollingClient
 {
