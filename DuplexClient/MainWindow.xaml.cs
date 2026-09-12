@@ -148,7 +148,11 @@ namespace DuplexClient
             {
                 string partnerUserID = e.SenderID == currentUserID ? e.RecipientID : e.SenderID;
 
-                if (!openPrivateWindows.ContainsKey(partnerUserID)) { return; }
+                if (!openPrivateWindows.ContainsKey(partnerUserID))
+                {
+                    ChatShellView_PrivateConversationRequested(this, partnerUserID);
+                    return;
+                }
 
                 PrivateMessageWindow privateWindow = openPrivateWindows[partnerUserID];
 
